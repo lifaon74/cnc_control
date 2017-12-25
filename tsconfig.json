@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "alwaysStrict": true,
+    "lib": [
+      "esnext", "dom"
+    ],
+
+
+    "declaration": false,
+    "downlevelIteration": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+
+    "noEmitHelpers": false,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitUseStrict": false,
+    "noLib": false,
+    "pretty": true,
+
+    "removeComments": true,
+    "sourceMap": false,
+
+    "strictNullChecks": false,
+
+
+    "module": "es6",
+    "target": "esnext",
+
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "compileOnSave": false
+}

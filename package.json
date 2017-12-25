@@ -1,0 +1,35 @@
+{
+  "name": "@lifaon/cnc_control",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/app.js",
+  "scripts": {
+    "start": "gulp watch",
+    "bundle": "gulp bundle",
+    "build": "gulp build",
+    "debug-gulp": "node node_modules/gulp/bin/gulp.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "typescript": "latest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^4.0.0",
+    "@types/node": "latest",
+    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp-cached": "^1.1.1",
+    "gulp-debug": "^3.1.0",
+    "gulp-load-plugins": "^1.5.0",
+    "gulp-progeny": "^0.4.0",
+    "gulp-rollup": "^2.13.0",
+    "gulp-sourcemaps": "^2.6.0",
+    "gulp-typescript": "latest",
+    "gulp-util": "latest",
+    "typescript": "^2.6.1",
+    "vinyl-source-stream": "latest"
+  },
+  "dependencies": {
+    "fs-extra": "^4.0.2"
+  }
+}
