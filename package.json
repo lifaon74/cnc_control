@@ -7,7 +7,8 @@
     "start": "gulp watch",
     "bundle": "gulp bundle",
     "build": "gulp build",
-    "debug-gulp": "node node_modules/gulp/bin/gulp.js"
+    "debug-gulp": "node node_modules/gulp/bin/gulp.js",
+    "rpio": "npm install rpio"
   },
   "author": "",
   "license": "ISC",
@@ -30,6 +31,7 @@
     "vinyl-source-stream": "latest"
   },
   "dependencies": {
-    "fs-extra": "^4.0.2"
+    "fs-extra": "^4.0.2",
+    "webworker-threads": "^0.7.13"
   }
 }
