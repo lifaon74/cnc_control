@@ -1,7 +1,29 @@
 import { config } from './config';
 import { StepperMove, StepperMovement } from './StepperMovement';
 import { codec } from './classes/codec';
+import { GetTime } from './classes/misc';
+import { GPIOController, SPIController } from './gpio';
 
+
+
+
+
+export class PWM {
+  public value: number;
+  public period: number;
+
+  protected initialTime: number;
+
+  constructor(value: number, period: number) {
+    this.value = value;
+    this.period = period;
+    this.initialTime = GetTime();
+  }
+
+  getState(): number {
+    return ((this.initialTime % this.period) < this.period) ? 1 : 0;
+  }
+}
 
 /**
  * [ CMD, PARAMS]
@@ -13,53 +35,53 @@ import { codec } from './classes/codec';
  */
 
 export class AGCODERunner {
-  static STEPPERS_STEP_REG: number = 0;
+  static STEPPERS_STEP_REG: number      = 0;
   static STEPPERS_DIRECTION_REG: number = 1;
-  static STEPPERS_ENABLED_REG: number = 2;
+  static STEPPERS_ENABLED_REG: number   = 2;
+  static PWM_REG: number                = 3;
+
+  static GPIO_CS_PIN: number            = 7;
+  static GPIO_PL_PIN: number            = 11;
+  static GPIO_GROUP_SIZE: number        = 6;
 
 
   public config: any;
   public time: number;
 
-  public outBuffer: Uint8Array;
-  public inBuffer: Uint8Array;
+  public gpioController: GPIOController;
 
   public currentMove: StepperMovement | null;
   public moveStack: StepperMovement[];
+  public pwm: PWM[];
 
   constructor(config: any) {
     this.config = config;
-    this.time = this.getTime();
+    this.time = GetTime();
 
-    this.outBuffer = new Uint8Array(6);
-    this.inBuffer = new Uint8Array(6);
+    this.initGPIO();
+    this.stopAll();
 
-    this.outBuffer[AGCODERunner.STEPPERS_ENABLED_REG] = 0b11111111;
-
-    this.currentMove = null;
-    this.moveStack = [];
+    this.enableSteppers(0b11111111);
 
     this.mainLoop();
   }
 
   mainLoop(): void {
-    const time: number = this.getTime();
-    const loopTime: number = time - this.time;
+    const time: number = GetTime();
+    // const loopTime: number = time - this.time;
 
     this.updateMovement(time);
-    this.updateIO();
+    this.updatePWM();
 
-    this.time = time;
-    setImmediate(() => this.mainLoop());
-  }
-
-  updateIO(): void {
+    this.gpioController.update();
     // console.log(
     //   this.outBuffer[AGCODERunner.STEPPERS_STEP_REG].toString(2),
     //   this.outBuffer[AGCODERunner.STEPPERS_DIRECTION_REG].toString(2)
     // );
-  }
 
+    this.time = time;
+    setImmediate(() => this.mainLoop());
+  }
 
   updateMovement(time: number): void {
     if(this.currentMove !== null) {
@@ -97,8 +119,8 @@ export class AGCODERunner {
       }
 
 
-      this.outBuffer[AGCODERunner.STEPPERS_STEP_REG] = stepsByte;
-      this.outBuffer[AGCODERunner.STEPPERS_DIRECTION_REG] = directionByte;
+      this.gpioController.outBuffer[AGCODERunner.STEPPERS_STEP_REG] = stepsByte;
+      this.gpioController.outBuffer[AGCODERunner.STEPPERS_DIRECTION_REG] = directionByte;
 
       if(finished) {
         this.currentMove = null;
@@ -112,10 +134,50 @@ export class AGCODERunner {
     }
   }
 
-  // return time in seconds
-  private getTime(): number {
-    const t = process.hrtime();
-    return t[0] + t[1] * 1e-9;
+  updatePWM(): void {
+    let mask: number = 0b00000000;
+    for(let i = 0, l = this.pwm.length; i < l; i++) {
+      if(this.pwm[i] !== null) {
+        mask |= (this.pwm[i].getState() << i);
+      }
+    }
+    this.gpioController.outBuffer[AGCODERunner.PWM_REG] = mask;
+  }
+
+
+
+
+
+  stopAll(): void {
+    this.currentMove = null;
+    this.moveStack = [];
+    this.pwm = [null, null, null, null, null, null, null, null];
+
+    this.enableSteppers(0b00000000);
+  }
+
+  addMovements(movements: StepperMovement[]): void {
+    Array.prototype.push.apply(this.moveStack, movements);
+  }
+
+  addPWM(pin: number, pwm: PWM | null): void {
+    this.pwm[pin] = pwm;
+  }
+
+
+  enableSteppers(mask: number) {
+    this.gpioController.outBuffer[AGCODERunner.STEPPERS_ENABLED_REG] = mask;
+  }
+
+
+  protected initGPIO(): void {
+    GPIOController.init();
+
+    this.gpioController = new GPIOController(
+      AGCODERunner.GPIO_CS_PIN,
+      AGCODERunner.GPIO_PL_PIN,
+      AGCODERunner.GPIO_GROUP_SIZE
+    );
   }
 }
 
@@ -145,11 +207,16 @@ function square(side: number, duration: number): StepperMovement[] {
 }
 
 function test() {
-  const runner = new AGCODERunner(config);
+  // const pwm = new PWM(0.1, 1);
+  // console.log(pwm.getState());
 
-  Array.prototype.push.apply(runner.moveStack, square(1000, 8));
+
+  const runner = new AGCODERunner(config);
+  runner.addPWM(1, new PWM(0.5, 2));
+  // runner.addMovements(square(1000, 8));
   // runner.moveStack.push(linearMove([1000], 5));
 }
+
 
 test();
 

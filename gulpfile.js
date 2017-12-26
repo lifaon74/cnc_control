@@ -31,6 +31,7 @@ const SRC_OTHER_FILES = [
 ];
 
 const DEST_DIR = 'dist';
+const RASPI_DEST_DIR = '\\\\RASPI\\home\\workspace\\cnc_control\\dist';
 
 function compileTs(buildOptions) {
   // options = Object.assign({
@@ -53,6 +54,7 @@ function compileTs(buildOptions) {
       .pipe(gulpPlugins.sourcemaps.init())
       .pipe(tsProject())
       .pipe(gulpPlugins.sourcemaps.write())
+      .pipe(gulp.dest(RASPI_DEST_DIR))
       .pipe(gulp.dest(path.join(DEST_DIR, buildOptions.target)));
   };
 }

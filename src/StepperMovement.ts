@@ -1,9 +1,17 @@
 import { ByteStepDecoder, ByteStepEncoder, codec, decode, encode } from './classes/codec';
+import { GetTime } from './classes/misc';
 
 export class StepperMove {
-  constructor(public pin: number,
-              public target: number,
-              public current: number = 0) {
+  public pin: number;
+  public target: number;
+  public current: number;
+
+  constructor(pin: number,
+              target: number,
+              current: number = 0) {
+    this.pin = pin;
+    this.target = target;
+    this.current = current;
   }
 
   get sign(): number {
@@ -49,8 +57,7 @@ export class StepperMovement {
   }
 
   start(): this {
-    const time: [number, number] = process.hrtime();
-    this.initialTime = time[0] + time[1] / 1e9;
+    this.initialTime = GetTime();
     return this;
   }
 }
