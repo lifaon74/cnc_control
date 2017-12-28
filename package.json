@@ -8,13 +8,12 @@
     "bundle": "gulp bundle",
     "build": "gulp build",
     "debug-gulp": "node node_modules/gulp/bin/gulp.js",
-    "rpio": "npm install rpio"
+    "raspi": "npm run rpio && npm run shared-buffer",
+    "rpio": "npm install rpio",
+    "shared-buffer": "npm install shared-buffer"
   },
   "author": "",
   "license": "ISC",
-  "peerDependencies": {
-    "typescript": "latest"
-  },
   "devDependencies": {
     "@types/fs-extra": "^4.0.0",
     "@types/node": "latest",
@@ -31,7 +30,9 @@
     "vinyl-source-stream": "latest"
   },
   "dependencies": {
-    "fs-extra": "^4.0.2",
+    "fs-extra": "^4.0.2"
+  },
+  "//": {
     "webworker-threads": "^0.7.13"
   }
 }

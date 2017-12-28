@@ -122,7 +122,7 @@ gulp.task('bundle', bundle(config));
 gulp.task('watch', () => {
   gulp.watch(
     path.join(SRC_DIR, '**'),
-    compileTs(config)
+    build(config)
   );
 });
 

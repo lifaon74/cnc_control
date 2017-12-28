@@ -1,11 +1,12 @@
 import * as rpio from 'rpio';
+import { $delay } from '../classes/misc';
 
 export class SPIController {
 
   static maxClockFrequency: number = 2e6; // 2Mhz
   static getMaxSPIClockDivider(): number {
     // return Math.pow(2, Math.ceil(Math.log(400e6 / SPIController.maxClockFrequency) / Math.log(2)));
-    return 16; // 16
+    return 128; // 16
   }
 
 
@@ -91,7 +92,7 @@ export class GPIOController {
 
   public update() {
     // console.log('update', Array.from(this.outBuffer).map(_ => _.toString(2)).join(', '));
-    console.log('update', Array.from(this.inBuffer).map(_ => _.toString(2)).join(', '));
+    // console.log('update', Array.from(this.inBuffer).map(_ => _.toString(2)).join(', '));
     rpio.write(this.plPin, rpio.LOW);
     rpio.write(this.plPin, rpio.HIGH);
     rpio.write(this.csPin, rpio.LOW);
@@ -168,11 +169,6 @@ function driverTest() {
 
 }
 
-function $delay(timeout: number): Promise<void> {
-  return new Promise<void>((resolve: any) => {
-    setTimeout(resolve, timeout);
-  });
-}
 
 /**
  * Blink a LED on pin 7
@@ -210,6 +206,6 @@ async function GPIOTest() {
 
 }
 
-GPIOTest();
+// GPIOTest();
 
 // BlinkTest();
