@@ -32,7 +32,6 @@ export class PWM {
  *   ex: [ COMMANDS.MOVE, 0b00000111, 1e-3, 4, 5, 1234, 5678, 9101]
  */
 
-
 export class AGCODERunner {
   static STEPPERS_STEP_REG: number      = 0;
   static STEPPERS_DIRECTION_REG: number = 1;
@@ -53,11 +52,10 @@ export class AGCODERunner {
   public currentMove: StepperMovement | null;
   public stepping: boolean;
   public moveStack: StepperMovement[];
+  public moveStackIndex: number = 0;
   public pwm: PWM[];
 
   public loopTime = { sum: 0, max: 0, min: Infinity, iter: 0 };
-  public runOutOfTime = 0;
-  public missedSteps = 0;
 
   constructor(config: any) {
     this.config = config;
@@ -70,7 +68,6 @@ export class AGCODERunner {
     this.enableSteppers(0b11111111);
   }
 
-
   // sudo ionice -c 2 -n 0 nice -n -20 node loop.js
   // sudo ionice -c 2 -n 0 nice -n -20 node run.js
   start(): void {
@@ -78,10 +75,10 @@ export class AGCODERunner {
       const time: number = GetTime();
       const loopTime: number = time - this.time;
 
-      // this.updateCommands();
+      this.updateCommands();
 
       this.updateMovement(time, loopTime);
-      // this.updatePWM();
+      this.updatePWM();
 
       this.gpioController.update();
 
@@ -92,20 +89,20 @@ export class AGCODERunner {
       this.loopTime.sum += loopTime;
       this.loopTime.iter++;
 
-      if(this.loopTime.sum > 5) {
+      if(this.loopTime.sum > 1) {
         console.log(`min: ${this.loopTime.min}, max: ${this.loopTime.max}, avg: ${this.loopTime.sum / this.loopTime.iter}; iter: ${this.loopTime.iter}`);
         this.loopTime.max = 0;
         this.loopTime.min = Infinity;
         this.loopTime.sum = 0;
         this.loopTime.iter = 0;
-        console.log(`runOutOfTime: ${this.runOutOfTime}, missedSteps: ${this.missedSteps}`);
         this.time = GetTime();
       }
+
       // break;
     }
 
-    // setImmediate(() => this.start());
-    // process.nextTick(() => this.start());
+    // setImmediate(() => this.mainLoop());
+    // process.nextTick(() => this.mainLoop());
     // this.mainLoop();
   }
 
@@ -134,12 +131,6 @@ export class AGCODERunner {
     }
   }
 
-  /**
-   * Encountered problems: some lloops are not fast enough and create strong jerk.
-   * Most of the jerk appends between 2 moves
-   * @param {number} time
-   * @param {number} loopTime
-   */
   updateMovement(time: number, loopTime: number): void {
     if(this.stepping) { //  && (loopTime > 40e-6)
       this.gpioController.outBuffer[AGCODERunner.STEPPERS_STEP_REG] = 0b00000000;
@@ -149,7 +140,7 @@ export class AGCODERunner {
       if(this.currentMove !== null) {
         // const accelerationFactor: number = elapsedTime * elapsedTime * 0.5;
         const elapsedTime: number = time - this.currentMove.initialTime;
-        const positionFactor: number = (
+        const positionFactor: number = Math.min(1,
           this.currentMove.acceleration * elapsedTime * elapsedTime * 0.5 +
           this.currentMove.initialSpeed * elapsedTime
         );
@@ -165,34 +156,37 @@ export class AGCODERunner {
 
           if(move.current < Math.abs(move.target)) { // !move.finished
             finished = false;
-
-            if(elapsedTime > this.currentMove.duration) this.runOutOfTime++;
-            if((Math.abs(Math.round(positionFactor * move.target)) - move.current) > 1) this.missedSteps++;
-
             if(
               (elapsedTime > this.currentMove.duration)
               || ((Math.abs(Math.round(positionFactor * move.target)) - move.current) > 0)
             ) { // must step
               move.current++;
-              stepsByte |= 1 << move.pin;
-              if(move.target > 0) directionByte |= 1 << move.pin;
+              stepsByte |= 1 << i;
+              if(move.target > 0) directionByte |= 1 << i;
             }
           }
         }
 
-        this.gpioController.outBuffer[AGCODERunner.STEPPERS_STEP_REG] = stepsByte;
-        this.gpioController.outBuffer[AGCODERunner.STEPPERS_DIRECTION_REG] = directionByte;
+        // this.gpioController.outBuffer[AGCODERunner.STEPPERS_STEP_REG] = stepsByte;
+        // this.gpioController.outBuffer[AGCODERunner.STEPPERS_DIRECTION_REG] = directionByte;
+        this.gpioController.outBuffer[0] = stepsByte;
+        this.gpioController.outBuffer[1] = directionByte;
         this.stepping = true;
 
         if(finished) {
-          // console.log(this.currentMove.duration, elapsedTime, positionFactor);
           this.currentMove = null;
         }
       }
 
-      if((this.currentMove === null) && (this.moveStack.length > 0)) {
-        this.currentMove = this.moveStack.shift();
-        this.currentMove.initialTime = time;
+      // if((this.currentMove === null) && (this.moveStack.length > 0)) {
+      if((this.currentMove === null) && (this.moveStackIndex < this.moveStack.length)) {
+        // this.currentMove = this.moveStack.shift();
+        this.currentMove = this.moveStack[this.moveStackIndex];
+        this.moveStackIndex++;
+        // for(let i = 0, l = this.currentMove.moves.length; i < l; i++) {
+        //   this.currentMove.moves[i].current = 0;
+        // }
+        this.currentMove.initialTime = GetTime();
       }
     }
   }
@@ -281,20 +275,6 @@ function linearMove(values: number[], duration: number): StepperMovement[] {
   return stepperMovements;
 }
 
-function uniformMove(values: number[], duration: number): StepperMovement[] {
-  const stepperMovement: StepperMovement = new StepperMovement();
-
-  for (let i = 0; i < values.length; i++) {
-    stepperMovement.moves.push(new StepperMove(i, values[i]));
-  }
-
-  stepperMovement.duration = duration;
-  stepperMovement.initialSpeed = 1 / duration;
-  stepperMovement.acceleration = 0;
-
-  return [stepperMovement];
-}
-
 function square(side: number, duration: number): StepperMovement[] {
   return [
     ...linearMove([side, 0], duration / 4),
@@ -350,12 +330,9 @@ const runner = new AGCODERunner(config);
 //   i++;
 // }
 
-// runner.addMovements(uniformMove([0], 6)); // warm-up
-for(let i = 0; i < 4; i++) {
-  // runner.addMovements(linearMove([6400, 6400], 2));
-  runner.addMovements(uniformMove([6400, 6400], 1));
-}
-runner.addMovements(uniformMove([-6400 * 4, -6400 * 4], 5));
-
+// runner.addMovements(linearMove([0, 0, -6400 * 4], 4));
+// runner.addMovements(linearMove([0, 0, -6400 * 4], 4));
+// runner.addMovements(linearMove([0, 0, -6400 * 4], 4));
+// runner.addMovements(linearMove([0, 0, -6400 * 4], 4));
 
 runner.start();

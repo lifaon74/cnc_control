@@ -122,53 +122,6 @@ export class GPIOController {
 //   console.log(nano / 1e6);
 // }
 
-function driverTest() {
-  console.log('enter');
-  SPIController.initRPIO();
-  SPIController.initSPI();
-  let spi = new SPIController(7);
-  spi.initBuffers(3);
-  spi.outBuffer[0] = 0b00000000;
-  spi.outBuffer[1] = 0b11111111;
-  spi.outBuffer[2] = 0b00000000;
-
-  let dir: number = 0b00000000;
-  let stepping: boolean = false;
-  let value: number = 0;
-
-  // spi.outBuffer => dir, steps, enable (active low)
-  let time = process.hrtime();
-  let loop = () => {
-    if(stepping) {
-      spi.outBuffer[1] = 0b11111111;
-      stepping = false;
-      spi.flush();
-    } else {
-      value++;
-      if(value >= 3200) {
-        let t = process.hrtime(time);
-        value = 0;
-        dir = dir ? 0b00000000 : 0b11111111;
-        let elapsed = t[0] * 1e6 + t[1] / 1e3;
-        console.log(elapsed / 3200);
-        time = process.hrtime();
-      }
-
-      spi.outBuffer[0] = dir;
-      spi.outBuffer[1] = 0b00000000;
-      stepping = true;
-
-      spi.flush();
-    }
-
-    rpio.usleep(10);
-    process.nextTick(loop);
-  };
-
-  process.nextTick(loop);
-
-}
-
 
 /**
  * Blink a LED on pin 7

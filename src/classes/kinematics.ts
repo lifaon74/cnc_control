@@ -49,6 +49,7 @@ export class CorrelatedArrayBuffers {
     }
   }
 
+  // INFO deprecated
   static roundFloatArray(source: Float32Array | Float64Array, destination: ArrayBufferView = source) {
     let value: number = 0;
     let roundedValue: number = 0;
@@ -264,10 +265,11 @@ export class MovementsSequence extends CorrelatedArrayBuffers {
     super(allocated, buffers);
   }
 
-  /**
-   * EXPECT _buffers['values']
-   */
 
+  /**
+   * Rounds all values of the movement
+   * @param buffer
+   */
   roundValues(buffer: any = this._buffers['values']): void {
     let value: number = 0;
     let roundedValue: number = 0;
@@ -375,7 +377,7 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
 
   /**
    * Try to merge 2 movements,
-   * can only append if both movements are collinear and have the same limits
+   * can only append if both movements are collinear
    * return true if index_1 has been merged in index_0
    *
    * @param index_0 movement_0 where de merge will occur
@@ -384,20 +386,6 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
    * @returns {boolean}
    */
   merge(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    // if(this.isNull(index_1)) {
-    //   return true;
-    // }
-    //
-    // if(this.isNull(index_0)) {
-    //   let movesSequence: ConstrainedMovementsSequence;
-    //   for(let i = 0; i < this.children.length; i++) {
-    //     movesSequence = this.children[i];
-    //     movesSequence._buffers.values[index_0] = movesSequence._buffers.values[index_1];
-    //     // movesSequence._buffers.values[index_1] = 0; => to force erase
-    //   }
-    //   return true;
-    // }
-
     if(this.areCorrelated(index_0, index_1, precision)) {
       let movesSequence: ConstrainedMovementsSequence;
       for(let i = 0, l = this.children.length; i < l; i++) {
@@ -406,28 +394,14 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
         // movesSequence._buffers.values[index_1] = 0; // => to force erase
       }
       return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Returns true if 2 movements are correlated
-   * @param {number} index_0
-   * @param {number} index_1
-   * @param {number} precision
-   * @returns {boolean}
-   */
-  areCorrelated(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    if(this.isNull(index_0) || this.isNull(index_1)) {
-      return true;
-    }
-
-    if(!this.areCollinear(index_0, index_1, precision)) {
+    } else {
       return false;
     }
+  }
 
-    return true;
+  areCorrelated(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
+    // return this.isNull(index_0) || this.isNull(index_1) || this.areCollinear(index_0, index_1, precision);
+    return this.areCollinear(index_0, index_1, precision);
   }
 }
 
@@ -900,7 +874,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
           return '(' + this._buffers.indices[index] + ') => ' +
             this.children.map((move: ConstrainedMovementsSequence) => {
               // return move.toString(index);
-              return '{ ' +
+              return '\n{ ' +
                 'value: ' + move._buffers.values[index] +
                 ', speed: ' + move._buffers.speedLimits[index] +
                 ', accel: ' + move._buffers.accelerationLimits[index] +
@@ -998,8 +972,8 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
               let value = move._buffers.values[i];
               return '{ ' +
                 'value: ' + value +
-                ', speed: ' + value * this._buffers.initialSpeeds[i] +
-                ', accel: ' + value * this._buffers.accelerations[i] +
+                ', speed: ' + this._buffers.initialSpeeds[i] +
+                ', accel: ' + this._buffers.accelerations[i] +
                 ' }';
             }).join(', ');
           break;

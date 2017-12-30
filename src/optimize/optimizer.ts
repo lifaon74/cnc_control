@@ -3,20 +3,21 @@ import { GCODEHelper, GCODECommand } from './gcodeHelper';
 import { Stepper } from '../classes/stepper';
 import {
   ConstrainedSynchronizedMovementsSequence, ConstrainedMovementsSequence, StepperMovementsSequence,
-  StepperMovesSequence, CorrelatedArrayBuffers, OptimizedSynchronizedMovementsSequence, CorrelatedArrayBuffersTree, SynchronizedMovementsSequence, MovementsSequence
+  StepperMovesSequence, CorrelatedArrayBuffers, OptimizedSynchronizedMovementsSequence, CorrelatedArrayBuffersTree, SynchronizedMovementsSequence, MovementsSequence, OptimizedMovementsSequence
 } from '../classes/kinematics';
 import { Timer } from '../classes/Timer';
+import { Float } from '../classes/lib/Float';
 
 
 
 const MOTOR_STEPS = 200;
-const MICROSTEPS = 16;
+const MICROSTEPS = 32;
 const stepsPerTurn = MOTOR_STEPS * MICROSTEPS;//6400  => /160
 
 
-const ACCELERATION_LIMIT = stepsPerTurn / (1 / 16);
-const SPEED_LIMIT = stepsPerTurn / (1 / 4); // 1 turn / s | max 6.25
-const JERK_LIMIT = stepsPerTurn / (16 / 1);
+const ACCELERATION_LIMIT = stepsPerTurn / (1 / 1);
+const SPEED_LIMIT = stepsPerTurn / (1 / 2); // 1 turn / s | max 6.25
+const JERK_LIMIT = stepsPerTurn / (16 / 1) * 0;
 
 const IS_BROWSER = (typeof window !== 'undefined');
 
@@ -208,6 +209,7 @@ export class GCODEOptimizer {
             movesSequence._buffers['accelerationLimits'][movementsSequenceLength] = stepper.accelerationLimit;
             movesSequence._buffers['jerkLimits'][movementsSequenceLength] = stepper.jerkLimit;
           }
+
           movementsSequence._buffers['indices'][movementsSequenceLength] = j;
           movementsSequenceLength++;
           break;
@@ -248,16 +250,17 @@ export class GCODEOptimizer {
     const timer = new Timer();
     let length: number = movementsSequence.length;
     timer.clear();
+
     movementsSequence.roundValues();
     movementsSequence.reduce();
 
     timer.disp('reduced in', 'ms');
     console.log(`reduced ratio ${length} => ${movementsSequence.length}`);
-    // console.log(movementsSequence.toString(-1, 'values'));
 
     timer.clear();
     const optimizedMovementsSequence: OptimizedSynchronizedMovementsSequence = movementsSequence.optimize();
     timer.disp('optimized in', 'ms');
+
 
     length = optimizedMovementsSequence.length;
     timer.clear();
@@ -326,96 +329,124 @@ export class GCODEOptimizer {
   }
 
   static virtualRun(optimizedMovementsSequence: OptimizedSynchronizedMovementsSequence): void {
-    let time: number = 0;
+    let totalTime: number = 0;
     const position: number[] = [];
 
     for(let i = 0, length = optimizedMovementsSequence.length; i < length; i++) {
-      time += optimizedMovementsSequence._buffers.times[i];
+
+      const time: number = optimizedMovementsSequence._buffers['times'][i];
+      const acceleration: number =  optimizedMovementsSequence._buffers['accelerations'][i];
+      const speed: number =  optimizedMovementsSequence._buffers['initialSpeeds'][i];
+
+      totalTime += optimizedMovementsSequence._buffers.times[i];
+
       for(let j = 0, l = optimizedMovementsSequence.children.length; j < l; j++) {
+        const movement: OptimizedMovementsSequence = optimizedMovementsSequence.children[j];
+        const value: number = movement._buffers['values'][i];
+
         if(position[j] === void 0) position[j] = 0;
-        position[j] += optimizedMovementsSequence.children[j]._buffers['values'][i]
+        position[j] += value;
+
+        const _value: number = 0.5 * acceleration * time * time + speed * time;
+        if(!Float.equals(_value, 1, 1e-9)) {
+          console.log(_value, value, ' -> ', time, acceleration, speed);
+          throw new Error(`Invalid optimization: ${i}`);
+        }
       }
     }
 
     console.log(optimizedMovementsSequence.toString());
     // console.log(optimizedMovementsSequence.toString(-1, 'times'));
     console.log('virtualRun :');
-    console.log(`length ${optimizedMovementsSequence.length}, time ${Timer.toString(time, 's')}, position ${position.join(', ')}`);
+    console.log(`length ${optimizedMovementsSequence.length}, time ${Timer.toString(totalTime, 's')}, position ${position.join(', ')}`);
     // console.log(optimizedMovementsSequence.times);
   }
 
 }
 
 
-
-function start() {
-  // testAreCollinear();
-  GCODEOptimizer.optimizeFile('../assets/' + 'tower' + '.gcode', CONFIG).catch(_ => console.log(_));
-}
-
-
-
-const createDynamicSequenceCollection = (size: number = 0, moves: number = 2): SynchronizedMovementsSequence => {
+function createSynchronizedMovementsSequence(size: number = 0, moves: number = 2): SynchronizedMovementsSequence {
   const collection = new SynchronizedMovementsSequence(size, { 'values': Float64Array });
   for(let i = 0; i < moves; i++) {
     collection.children[i] = new MovementsSequence(size, { 'values': Float64Array });
   }
   collection.length = size;
   return collection;
-};
+}
 
-const buildDynamicSequenceCollection = (data: number[][]): SynchronizedMovementsSequence => {
-  const collection = createDynamicSequenceCollection(0, data.length);
+function buildSynchronizedMovementsSequence(data: number[][]): SynchronizedMovementsSequence {
+  const collection = createSynchronizedMovementsSequence(0, data.length);
   for(let i = 0; i < data.length; i++) {
     collection.children[i]._buffers['values'] = new Float64Array(data[i]);
   }
   return collection;
-};
+}
 
-const testAreCollinear = () => {
-  let collection = buildDynamicSequenceCollection([[0, 0], [0, 0]]);
+
+function testAreCollinear() {
+  let collection = buildSynchronizedMovementsSequence([[0, 0], [0, 0]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 0]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[1, 0], [0, 0]]);
+  collection = buildSynchronizedMovementsSequence([[1, 0], [0, 0]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[1, 0], [0, 0]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 1], [0, 0]]);
+  collection = buildSynchronizedMovementsSequence([[0, 1], [0, 0]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, 0]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 0], [1, 0]]);
+  collection = buildSynchronizedMovementsSequence([[0, 0], [1, 0]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 0]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 0], [0, 1]]);
+  collection = buildSynchronizedMovementsSequence([[0, 0], [0, 1]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 1]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 4], [0, 1]]);
+  collection = buildSynchronizedMovementsSequence([[0, 4], [0, 1]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[0, 4], [0, 1]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[4, 0], [1, 0]]);
+  collection = buildSynchronizedMovementsSequence([[4, 0], [1, 0]]);
   if(!collection.areCollinear(0, 1)) throw new Error('[[4, 0], [1, 0]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[4, 0], [1, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[4, 0], [1, 0]] should be collinear');
+  collection = buildSynchronizedMovementsSequence([[0, 0], [1, 1]]);
+  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 1]] should be collinear');
 
-  collection = buildDynamicSequenceCollection([[-1, 0], [1, 0]]);
+  collection = buildSynchronizedMovementsSequence([[-1, 0], [1, 0]]);
   if(collection.areCollinear(0, 1)) throw new Error('[[-1, 0], [1, 0]] should not be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 1], [0, -1]]);
+  collection = buildSynchronizedMovementsSequence([[0, 1], [0, -1]]);
   if(collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, -1]] should not be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, 1], [1, 0]]);
+  collection = buildSynchronizedMovementsSequence([[0, 1], [1, 0]]);
   if(collection.areCollinear(0, 1)) throw new Error('[[0, 1], [1, 0]] should not be collinear');
 
-  collection = buildDynamicSequenceCollection([[0, -1], [1, 0]]);
+  collection = buildSynchronizedMovementsSequence([[0, -1], [1, 0]]);
   if(collection.areCollinear(0, 1)) throw new Error('[[0, -1], [1, 0]] should not be collinear');
 
-};
+}
+
+function test() {
+  testAreCollinear();
+}
+
+
+
+function start() {
+  test();
+
+  // const fileName: string = 'tower';
+  // const fileName: string = 'circle';
+  const fileName: string = 'square';
+  // const fileName: string = 'thin_tower';
+  GCODEOptimizer.optimizeFile('../assets/' + fileName + '.gcode', CONFIG).catch(_ => console.log(_));
+}
+
+
+
 
 if(IS_BROWSER) {
   window.onload = start;
 } else {
   start();
 }
+
 
 
 

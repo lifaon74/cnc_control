@@ -63,6 +63,7 @@ function copyOtherFiles(buildOptions) {
   return function _copyOtherFiles() {
     return gulp.src(SRC_OTHER_FILES, { base: BASE })
       .pipe(gulpPlugins.cached('others'))
+      .pipe(gulp.dest(RASPI_DEST_DIR))
       .pipe(gulp.dest(path.join(DEST_DIR, buildOptions.target)));
   };
 }

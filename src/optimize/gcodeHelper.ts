@@ -292,14 +292,14 @@ function createTower(path: string): Promise<void> {
       writer.push(GCODEHelper.square([], 0, 0, 100));
     }
 
-    writer.push(GCODEHelper.moveTo([], 0, 0, -layerHeight * layers));
+    writer.push(GCODEHelper.moveTo([], 0, 0, -layerHeight * (layers - 1)));
     writer.push(null);
   });
 }
 
 // createCircle('../assets/circle.gcode');
-// createSquare('../assets/square.gcode');
-createTower('../assets/tower.gcode');
+createSquare('../assets/square.gcode');
+// createTower('../assets/tower.gcode');
 
 // console.log(GCODEHelper.moveTo([], 10, 10)[0].toString());
 // console.log(GCODEHelper.arc([], 0, 0, 100, 1 / 4 * Math.PI, 3 / 4 * Math.PI, true, 100).map(a => a.toString()).join('\n'));
