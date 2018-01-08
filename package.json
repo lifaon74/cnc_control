@@ -27,7 +27,8 @@
     "gulp-typescript": "latest",
     "gulp-util": "latest",
     "typescript": "^2.6.1",
-    "vinyl-source-stream": "latest"
+    "vinyl-source-stream": "latest",
+    "nan": "latest"
   },
   "dependencies": {
     "fs-extra": "^4.0.2"

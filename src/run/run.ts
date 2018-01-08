@@ -53,6 +53,7 @@ function masterProgram(): void {
         i += bytesRead;
         sharedArray.size = bytesRead;
         // console.log(sharedArray.data.slice(0, 70).join(', '));
+        console.log('send');
         sharedArray.send();
       } else {
         break;
@@ -79,5 +80,5 @@ if ($cluster.isMaster) {
 
   masterProgram();
 } else {
-  forkProgram();
+  // forkProgram();
 }
