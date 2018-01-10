@@ -28,7 +28,12 @@ class Uint8Array {
     uint8_t * buffer;
     uint32_t length;
 
-    Uint8Array(uint32_t length, uint8_t * buffer = nullptr) {
+    Uint8Array(uint32_t length) {
+      this->length = length;
+      this->buffer = new uint8_t[this->length];
+    }
+
+    Uint8Array(uint32_t length, uint8_t * buffer) {
       this->length = length;
       this->buffer = buffer;
     }
@@ -49,6 +54,18 @@ class Uint8Array {
       for(uint32_t i = 0; i < array->length; i++) {
         this->buffer[i + offset] = array->buffer[i];
       }
+    }
+
+    void print() {
+      this->print(0, this->length);
+    }
+
+    void print(uint32_t start, uint32_t end) {
+      for(uint32_t i = 0; i < end; i++) {
+        if(i > 0) std::cout << ", ";
+        std::cout << (uint32_t) this->buffer[i];
+      }
+      std::cout << "\n";
     }
 };
 
@@ -104,9 +121,11 @@ class SharedBufferStream {
     SharedBufferStream(Uint8Array * buffer) {
       this->buffer = buffer;
       this->packetId = 0;
+      std::cout << "SharedBufferStream:" << (uint32_t) this->buffer->buffer[0] << "\n";
     }
 
     ~SharedBufferStream() {
+      std::cout << "destroy SharedBufferStream:" << "\n";
       delete this->buffer;
     }
 
@@ -293,6 +312,13 @@ class StepperMovement {
       this->initialTime = GetTime();
       return this;
     }
+
+    void print() {
+      std::cout << "t: " << this->duration << ", ";
+      std::cout << "s: " << this->initialSpeed << ", ";
+      std::cout << "a: " << this->acceleration << ", ";
+      std::cout << "\n";
+    }
 };
 
 
@@ -336,12 +362,11 @@ template<typename T>
 class ByteStepDecoder: public ByteDecoder<T> {
   public:
 
-    ByteStepDecoder(bool initCall = true) {
+    ByteStepDecoder() {
       this->_step = 0;
-      if(initCall) this->_init();
     }
 
-    void next(uint8_t value) {
+    void next(uint8_t value) override {
       this->throwIfDone();
       this->_next(value);
     }
@@ -360,6 +385,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
   public:
     StepperMovementDecoder() {
       this->_output = new StepperMovement();
+      this->_init();
     }
 
 //    ~StepperMovementDecoder() {
@@ -392,8 +418,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
 
           case 2: // duration
             if(this->_index >= this->_bytes->length) {
-              this->_output->duration = *((double *) (this->_bytes->buffer));
-              std::cout << "duration : " << this->_output->duration;
+              this->_output->duration = ((double *) (this->_bytes->buffer))[0];
               this->_index = 0;
               this->_step = 4;
               break;
@@ -405,36 +430,37 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
             this->_bytes->buffer[this->_index++] = value;
             this->_step = 2;
             break;
-//
-//          case 4: // initialSpeed
-//            if(this->_index >= this->_bytes.length) {
-//              this->_output.initialSpeed = new Float64Array(this->_bytes.buffer)[0];
-//              this->_index = 0;
-//              this->_step = 6;
-//              break;
-//            } else {
-//              this->_step = 5;
-//              return;
-//            }
-//          case 5:
-//            this->_bytes[this->_index++] = value;
-//            this->_step = 4;
-//            break;
-//
-//          case 6: // acceleration
-//            if(this->_index >= this->_bytes.length) {
-//              this->_output.acceleration = new Float64Array(this->_bytes.buffer)[0];
-//              this->_moveIndex = 0;
-//              this->_step = 8;
-//              break;
-//            } else {
-//              this->_step = 7;
-//              return;
-//            }
-//          case 7:
-//            this->_bytes[this->_index++] = value;
-//            this->_step = 6;
-//            break;
+
+          case 4: // initialSpeed
+            if(this->_index >= this->_bytes->length) {
+              this->_output->initialSpeed = ((double *) (this->_bytes->buffer))[0];
+              this->_index = 0;
+              this->_step = 6;
+              break;
+            } else {
+              this->_step = 5;
+              return;
+            }
+          case 5:
+            this->_bytes[this->_index++] = value;
+            this->_step = 4;
+            break;
+
+          case 6: // acceleration
+            if(this->_index >= this->_bytes->length) {
+              this->_output->acceleration = ((double *) (this->_bytes->buffer))[0];
+              this->_output->print();
+              this->_moveIndex = 0;
+              this->_step = 8;
+              break;
+            } else {
+              this->_step = 7;
+              return;
+            }
+          case 7:
+            this->_bytes[this->_index++] = value;
+            this->_step = 6;
+            break;
 //
 //          case 8: // movements
 //            if(this->_moveIndex >= this->_output.moves.length) {
@@ -462,6 +488,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
 //            break;
 
           default:
+//            throw std::logic_error("Unexpected step : " + this->_step);
             Nan::ThrowError("Unexpected step : " + this->_step);
             return;
         }
@@ -567,7 +594,11 @@ public:
     if(this->sharedArray->readable()) {
       this->sharedArray->receive();
       std::cout << "receive\n";
+//      this->sharedArray->buffer->print(0, 10);
+
       Uint8Array * data = this->sharedArray->data();
+
+      data->print(0, 20);
 
       StepperMovementDecoder * decoder;
 
@@ -577,7 +608,7 @@ public:
             decoder = new StepperMovementDecoder();
             while(!decoder->done()) {
               i++;
-//              decoder->next(data->buffer[i]);
+              decoder->next(data->buffer[i]);
             }
             this->moveStack.push(decoder->output());
             // console.log(decoder.output);
@@ -587,6 +618,7 @@ public:
             return;
         }
       }
+
       this->sharedArray->send();
     }
   }

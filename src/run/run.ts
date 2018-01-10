@@ -52,7 +52,7 @@ function masterProgram(): void {
       if(bytesRead > 0) {
         i += bytesRead;
         sharedArray.size = bytesRead;
-        // console.log(sharedArray.data.slice(0, 70).join(', '));
+        console.log(sharedArray.data.slice(0, 70).join(', '));
         console.log('send');
         sharedArray.send();
       } else {
