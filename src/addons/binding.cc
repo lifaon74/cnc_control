@@ -23,34 +23,40 @@ double GetTime() {
 }
 
 
-class Uint8Array {
+template<typename T>
+class TypedArray {
   public:
-    uint8_t * buffer;
+    T * buffer;
     uint32_t length;
+    bool autoFree;
 
-    Uint8Array(uint32_t length) {
+    TypedArray(uint32_t length) {
       this->length = length;
-      this->buffer = new uint8_t[this->length];
+      this->buffer = new T[this->length];
+      this->autoFree = true;
     }
 
-    Uint8Array(uint32_t length, uint8_t * buffer) {
+    TypedArray(uint32_t length, T * buffer) {
       this->length = length;
       this->buffer = buffer;
+      this->autoFree = false;
     }
 
-//    ~Uint8Array() {
-//      delete [] this->buffer;
-//    }
+    ~TypedArray() {
+      if(this->autoFree) {
+        delete [] (buffer);
+      }
+    }
 
-    uint8_t & operator[] (const uint32_t index){
+    T& operator[] (const uint32_t index) {
       return this->buffer[index];
     }
 
-    Uint8Array * subarray(uint32_t start, uint32_t end) {
-      return new Uint8Array(end - start, this->buffer + start);
+    TypedArray * subarray(uint32_t start, uint32_t end) {
+      return new TypedArray(end - start, this->buffer + start);
     }
 
-    void set(Uint8Array * array, uint32_t offset = 0) {
+    void set(TypedArray * array, uint32_t offset = 0) {
       for(uint32_t i = 0; i < array->length; i++) {
         this->buffer[i + offset] = array->buffer[i];
       }
@@ -63,11 +69,14 @@ class Uint8Array {
     void print(uint32_t start, uint32_t end) {
       for(uint32_t i = 0; i < end; i++) {
         if(i > 0) std::cout << ", ";
-        std::cout << (uint32_t) this->buffer[i];
+        std::cout << (double) this->buffer[i];
       }
       std::cout << "\n";
     }
 };
+
+#define Uint8Array TypedArray<uint8_t>
+#define Int8Array TypedArray<int8_t>
 
 
 Uint8Array * createSharedBuffer(uint32_t key, uint32_t size, bool initialize = false) {
@@ -248,7 +257,6 @@ class GPIOController {
     StepperMovement
 ****/
 
-#define StepperMovementMoves 8
 
 class StepperMove {
   public:
@@ -279,31 +287,39 @@ class StepperMove {
     uint8_t pinMask() {
       return 1 << this->pin;
     }
+
+    void print() {
+      std::cout << "move #" << (uint32_t) this->pin << " : " << this->target << "\n";
+    }
 };
 
 
 class StepperMovement {
   public:
-    StepperMove * moves[StepperMovementMoves];
+    std::vector<StepperMove *> moves;
     double duration;
     double initialSpeed;
     double acceleration;
     double initialTime;
 
     StepperMovement() {
-      for(uint8_t i = 0; i < StepperMovementMoves; i++) {
-        this->moves[i] = nullptr;
-      }
       this->duration = 0;
       this->initialSpeed = 0;
       this->acceleration = 0;
       this->initialTime = 0;
     }
 
+    ~StepperMovement() {
+//      std::cout << "delete StepperMovement\n";
+      for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
+        delete (*it);
+      }
+    }
+
     uint8_t pinMask() {
       uint8_t pinMask = 0;
-      for(uint8_t i = 0; i < StepperMovementMoves; i++) {
-        pinMask |= this->moves[i]->pinMask();
+      for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
+        pinMask |= (*it)->pinMask();
       }
       return pinMask;
     }
@@ -318,6 +334,9 @@ class StepperMovement {
       std::cout << "s: " << this->initialSpeed << ", ";
       std::cout << "a: " << this->acceleration << ", ";
       std::cout << "\n";
+      for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
+        (*it)->print();
+      }
     }
 };
 
@@ -366,6 +385,8 @@ class ByteStepDecoder: public ByteDecoder<T> {
       this->_step = 0;
     }
 
+    virtual ~ByteStepDecoder() {}
+
     void next(uint8_t value) override {
       this->throwIfDone();
       this->_next(value);
@@ -388,9 +409,9 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
       this->_init();
     }
 
-//    ~StepperMovementDecoder() {
+    ~StepperMovementDecoder() {
 //      delete this->_output;
-//    }
+    }
 
   protected:
     Uint8Array * _bytes;
@@ -398,18 +419,18 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
     uint8_t _moveIndex;
 
     void _next(uint8_t value) {
-      uint8_t j = 0;
       while(true) {
+//      std::cout << "step: " << this->_step << "\n";
+
         switch(this->_step) {
           case 0: // init
             this->_step = 1;
             return;
 
           case 1: // pinMask
-            j = 0;
             for(uint8_t i = 0; i < 8; i++) {
               if(value & (1 << i)) {
-                this->_output->moves[j++] = new StepperMove(i, 0);
+                this->_output->moves.push_back(new StepperMove(i, 0));
               }
             }
             this->_bytes = new Uint8Array(8);
@@ -442,14 +463,13 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
               return;
             }
           case 5:
-            this->_bytes[this->_index++] = value;
+            this->_bytes->buffer[this->_index++] = value;
             this->_step = 4;
             break;
 
           case 6: // acceleration
             if(this->_index >= this->_bytes->length) {
               this->_output->acceleration = ((double *) (this->_bytes->buffer))[0];
-              this->_output->print();
               this->_moveIndex = 0;
               this->_step = 8;
               break;
@@ -458,34 +478,36 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
               return;
             }
           case 7:
-            this->_bytes[this->_index++] = value;
+            this->_bytes->buffer[this->_index++] = value;
             this->_step = 6;
             break;
-//
-//          case 8: // movements
-//            if(this->_moveIndex >= this->_output.moves.length) {
-//              this->_done = true;
-//              return;
-//            } else {
-//              this->_bytes = new Uint8Array(Int32Array.BYTES_PER_ELEMENT);
-//              this->_index = 0;
-//              this->_step = 9;
-//            }
-//
-//          case 9: // movement distance
-//            if(this->_index >= this->_bytes.length) {
-//              this->_output.moves[this->_moveIndex].target = new Int32Array(this->_bytes.buffer)[0];
-//              this->_moveIndex++;
-//              this->_step = 8;
-//              break;
-//            } else {
-//              this->_step = 10;
-//              return;
-//            }
-//          case 10:
-//            this->_bytes[this->_index++] = value;
-//            this->_step = 9;
-//            break;
+
+          case 8: // movements
+            if(this->_moveIndex >= this->_output->moves.size()) {
+              this->_done = true;
+              delete this->_bytes;
+              return;
+            } else {
+              delete this->_bytes;
+              this->_bytes = new Uint8Array(4);
+              this->_index = 0;
+              this->_step = 9;
+            }
+
+          case 9: // movement distance
+            if(this->_index >= this->_bytes->length) {
+              this->_output->moves[this->_moveIndex]->target = ((int32_t *) (this->_bytes->buffer))[0];
+              this->_moveIndex++;
+              this->_step = 8;
+              break;
+            } else {
+              this->_step = 10;
+              return;
+            }
+          case 10:
+            this->_bytes->buffer[this->_index++] = value;
+            this->_step = 9;
+            break;
 
           default:
 //            throw std::logic_error("Unexpected step : " + this->_step);
@@ -541,14 +563,15 @@ public:
   SharedBufferStream * sharedArray;
 
   StepperMovement * currentMove;
-  bool stepping;
   std::queue<StepperMovement *> moveStack;
+  bool stepping;
+  double stepTime;
 
   PWM * pwm[PWM_CHANELS];
 
 //  public loopTime = { sum: 0, max: 0, min: Infinity, iter: 0 };
-//  public runOutOfTime = 0;
-//  public missedSteps = 0;
+  uint32_t runOutOfTime = 0;
+  uint32_t missedSteps = 0;
 
   AGCODERunner() {
     this->time = 0;
@@ -556,6 +579,8 @@ public:
 
     this->currentMove = nullptr;
     this->stepping = false;
+    this->stepTime = 0;
+
 
     for(uint8_t i = 0; i < PWM_CHANELS; i++) {
       this->pwm[i] = nullptr;
@@ -581,12 +606,17 @@ public:
       double time = GetTime();
       double loopTime = time - this->time;
 
-      this->updateCommands();
+      if((time - this->stepTime) > 2e-6) { // max frequency: 250kHz
+        this->stepTime = time;
+        this->updateCommands();
+      }
+
       this->updateMovement(time, loopTime);
       this->updatePWM();
       this->gpioController->update();
 
       this->time = time;
+//      std::cout << "loopTime : " << loopTime << "\n";
     }
   }
 
@@ -597,27 +627,29 @@ public:
 //      this->sharedArray->buffer->print(0, 10);
 
       Uint8Array * data = this->sharedArray->data();
+//      data->print(0, 20);
 
-      data->print(0, 20);
-
-      StepperMovementDecoder * decoder;
+      StepperMovementDecoder * decoder = nullptr;
 
       for(uint32_t i = 0; i < data->length; i++) {
         switch(data->buffer[i]) {
           case 0x10:
+
             decoder = new StepperMovementDecoder();
             while(!decoder->done()) {
               i++;
               decoder->next(data->buffer[i]);
             }
             this->moveStack.push(decoder->output());
-            // console.log(decoder.output);
+            decoder->output()->print();
             break;
           default:
             Nan::ThrowError("Unexpected command code 0x" + data->buffer[i]);
             return;
         }
       }
+
+      delete decoder;
 
       this->sharedArray->send();
     }
@@ -642,15 +674,15 @@ public:
         bool finished = true;
 
         StepperMove * _move;
-        for(uint8_t i = 0; i < StepperMovementMoves; i++) {
-          _move = this->currentMove->moves[i];
+        for(std::vector<StepperMove *>::iterator it = this->currentMove->moves.begin(); it != this->currentMove->moves.end(); ++it) {
+          _move = (*it);
 
           if(_move != nullptr) {
             if(_move->current < std::abs(_move->target)) { // !move.finished
               finished = false;
 
-//              if(elapsedTime > this->currentMove.duration) this->runOutOfTime++;
-//              if((Math.abs(Math.round(positionFactor * move.target)) - move.current) > 1) this->missedSteps++;
+              if(elapsedTime > this->currentMove->duration) this->runOutOfTime++;
+              if((std::abs(std::round(positionFactor * _move->target)) - _move->current) > 1) this->missedSteps++;
 
               if(
                 (elapsedTime > this->currentMove->duration)
@@ -672,6 +704,8 @@ public:
           // console.log(this->currentMove.duration, elapsedTime, positionFactor);
           delete this->currentMove;
           this->currentMove = nullptr;
+          std::cout << "end a move\n";
+          std::cout << this->missedSteps << ", " << this->runOutOfTime << "\n";
         }
       }
 
