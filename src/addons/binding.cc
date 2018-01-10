@@ -534,12 +534,12 @@ class PWM {
       this->period = period;
     }
 
-    bool isActive() {
-      return std::fmod(GetTime(), this->period) < (this->value * this->period);
+    bool isActive(double time = GetTime()) {
+      return std::fmod(time, this->period) < (this->value * this->period);
     }
 
-    uint8_t getState() {
-      return this->isActive() ? 1 : 0;
+    uint8_t getState(double time = GetTime()) {
+      return this->isActive(time) ? 1 : 0;
     }
 };
 
@@ -557,8 +557,6 @@ class PWM {
 
 class AGCODERunner {
 public:
-  double time;
-
   GPIOController * gpioController;
   SharedBufferStream * sharedArray;
 
@@ -574,7 +572,6 @@ public:
   uint32_t missedSteps = 0;
 
   AGCODERunner() {
-    this->time = 0;
     this->gpioController = nullptr;
 
     this->currentMove = nullptr;
@@ -590,6 +587,8 @@ public:
 
     this->initGPIO();
     this->stopAll();
+
+    this->addPWM(new PWM(0.5, 1e-5));
   }
 
   ~AGCODERunner() {
@@ -599,23 +598,21 @@ public:
   }
 
   void start() {
-    this->time = GetTime();
     this->enableSteppers(0b11111111);
 
     while(true) {
       double time = GetTime();
-      double loopTime = time - this->time;
+
+      this->updateCommands();
 
       if((time - this->stepTime) > 2e-6) { // max frequency: 250kHz
         this->stepTime = time;
-        this->updateCommands();
+        this->updateMovement(time);
       }
 
-      this->updateMovement(time, loopTime);
-      this->updatePWM();
+      this->updatePWM(time);
       this->gpioController->update();
 
-      this->time = time;
 //      std::cout << "loopTime : " << loopTime << "\n";
     }
   }
@@ -656,7 +653,7 @@ public:
   }
 
 
-  void updateMovement(double time, double loopTime) {
+  void updateMovement(double time) {
     if(this->stepping) {
       this->gpioController->outBuffer[STEPPERS_STEP_REG] = 0b00000000;
       this->stepping = false;
@@ -717,11 +714,11 @@ public:
     }
   }
 
-  void updatePWM() {
+  void updatePWM(double time) {
     uint8_t mask = 0b00000000;
     for(uint8_t i = 0; i < PWM_CHANELS; i++) {
       if(this->pwm[i] != nullptr) {
-        mask |= (this->pwm[i]->getState() << i);
+        mask |= (this->pwm[i]->getState(time) << i);
       }
     }
     this->gpioController->outBuffer[PWM_REG] = mask;
@@ -782,11 +779,6 @@ protected:
 //int main() {
 //  AGCODERunner * runner = new AGCODERunner();
 //  runner->start();
-//
-////    std::cout << "Hello world!" << GetTime() << std::endl;
-////    for(uint32_t i = 0; i < 1e9; i++) {
-////        std::cout << "Hello world!" << GetTime() << std::endl;
-////    }
 //  return 0;
 //}
 
