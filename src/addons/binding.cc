@@ -5,9 +5,15 @@
 #include <queue>
 #include <iostream>
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
+
+
+#include "classes/TypedArray.h"
+#include "classes/SharedBufferStream.h"
+#include "classes/Codec.h"
+#include "classes/GPIOController.h"
+
+#include "libs/bcm2835/bcm2835.h"
 
 //#define math_max(x, y) ((x > y) ? x : y)
 //#define math_min(x, y) ((x < y) ? x : y)
@@ -23,233 +29,6 @@ double GetTime() {
 }
 
 
-template<typename T>
-class TypedArray {
-  public:
-    T * buffer;
-    uint32_t length;
-    bool autoFree;
-
-    TypedArray(uint32_t length) {
-      this->length = length;
-      this->buffer = new T[this->length];
-      this->autoFree = true;
-    }
-
-    TypedArray(uint32_t length, T * buffer) {
-      this->length = length;
-      this->buffer = buffer;
-      this->autoFree = false;
-    }
-
-    ~TypedArray() {
-      if(this->autoFree) {
-        delete [] (buffer);
-      }
-    }
-
-    T& operator[] (const uint32_t index) {
-      return this->buffer[index];
-    }
-
-    TypedArray * subarray(uint32_t start, uint32_t end) {
-      return new TypedArray(end - start, this->buffer + start);
-    }
-
-    void set(TypedArray * array, uint32_t offset = 0) {
-      for(uint32_t i = 0; i < array->length; i++) {
-        this->buffer[i + offset] = array->buffer[i];
-      }
-    }
-
-    void print() {
-      this->print(0, this->length);
-    }
-
-    void print(uint32_t start, uint32_t end) {
-      for(uint32_t i = 0; i < end; i++) {
-        if(i > 0) std::cout << ", ";
-        std::cout << (double) this->buffer[i];
-      }
-      std::cout << "\n";
-    }
-};
-
-#define Uint8Array TypedArray<uint8_t>
-#define Int8Array TypedArray<int8_t>
-
-
-Uint8Array * createSharedBuffer(uint32_t key, uint32_t size, bool initialize = false) {
-  int32_t shmId = shmget(key, size, initialize ? IPC_CREAT | 0666 : 0666);
-
-  if (shmId < 0) {
-    Nan::ThrowError(strerror(errno));
-    return nullptr;
-  }
-
-
-  uint8_t * data = (uint8_t *) shmat(shmId, NULL, 0);
-
-  if (data == (uint8_t *)-1) {
-    Nan::ThrowError(strerror(errno));
-    return nullptr;
-  }
-
-  if (initialize) {
-    memset(data, 0, size);
-  }
-
-  return new Uint8Array(size, data);
-}
-
-
-/***
-    SharedBufferStream
-****/
-class SharedBufferStream {
-  public:
-    static uint32_t ID;
-
-    static const uint8_t PACKET_ID_REG = 0;
-    static const uint8_t PACKET_SIZE_REG = 1;
-    static const uint8_t START_OFFSET = 5;
-
-    static SharedBufferStream * createMaster(uint32_t size = 1e6, uint32_t id = SharedBufferStream::ID++) {
-      SharedBufferStream * sharedBuffer = new SharedBufferStream(createSharedBuffer(id, size, true));
-      sharedBuffer->packetId = 255;
-      return sharedBuffer;
-    }
-
-    static SharedBufferStream * create(uint32_t size = 1e6, uint32_t id = SharedBufferStream::ID++) {
-      return new SharedBufferStream(createSharedBuffer(id, size));
-    }
-
-    Uint8Array * buffer;
-    uint8_t packetId;
-
-    SharedBufferStream(Uint8Array * buffer) {
-      this->buffer = buffer;
-      this->packetId = 0;
-      std::cout << "SharedBufferStream:" << (uint32_t) this->buffer->buffer[0] << "\n";
-    }
-
-    ~SharedBufferStream() {
-      std::cout << "destroy SharedBufferStream:" << "\n";
-      delete this->buffer;
-    }
-
-    bool readable() {
-      return (this->buffer->buffer[SharedBufferStream::PACKET_ID_REG]) != this->packetId;
-    }
-
-    uint32_t size() {
-      return (
-        (uint32_t) (this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG    ])
-        | (uint32_t) ((this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 1] << 8))
-        | (uint32_t) ((this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 2] << 16))
-        | (uint32_t) ((this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 3] << 24))
-      );
-    }
-
-    void size(uint32_t value) {
-      this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG    ] = value;
-      this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 1] = value >> 8;
-      this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 2] = value >> 16;
-      this->buffer->buffer[SharedBufferStream::PACKET_SIZE_REG + 3] = value >> 24;
-    }
-
-    uint32_t maxSize() {
-      return this->buffer->length - SharedBufferStream::START_OFFSET;
-    }
-
-    Uint8Array * data() {
-      return this->buffer->subarray(SharedBufferStream::START_OFFSET, SharedBufferStream::START_OFFSET + this->size());
-    }
-
-    void data(Uint8Array * value) {
-      this->size(value->length);
-      this->buffer->set(value, SharedBufferStream::START_OFFSET);
-    }
-
-    void receive() {
-      this->packetId = this->buffer->buffer[SharedBufferStream::PACKET_ID_REG];
-    }
-
-    void send() {
-      this->packetId++;
-      this->buffer->buffer[SharedBufferStream::PACKET_ID_REG] = this->packetId;
-    }
-};
-
-uint32_t SharedBufferStream::ID = 10;
-
-
-
-/***
-    GPIOController
-****/
-
-class GPIOController {
-  public:
-//  static init(): void {
-//    rpio.init({
-//      gpiomem: false,
-//      mapping: 'physical'
-//    });
-//
-//    rpio.spiBegin();
-//    rpio.spiSetClockDivider(16);
-//  }
-
-  uint8_t csPin;
-  uint8_t plPin;
-  uint8_t length;
-
-  uint8_t * outBuffer;
-  uint8_t * inBuffer;
-
-  GPIOController(uint8_t csPin, uint8_t plPin, uint8_t length) {
-    this->csPin      = csPin;
-    this->plPin      = plPin;
-    this->length     = length;
-    this->outBuffer  = new uint8_t[length];
-    this->inBuffer   = new uint8_t[length];
-
-//    rpio.open(this->csPin, rpio.OUTPUT, rpio.HIGH);
-//    rpio.open(this->plPin, rpio.OUTPUT, rpio.HIGH);
-  }
-
-  ~GPIOController() {
-    delete [] this->outBuffer;
-    delete [] this->inBuffer;
-  }
-
-  uint8_t pinCount() {
-    return this->length * 8;
-  }
-
-  bool read(uint8_t pin) {
-    return (this->inBuffer[pin / 8] & (1 << (pin % 8))) != 0;
-  }
-
-  void write(uint8_t pin, bool state) {
-    if(state) {
-      this->outBuffer[pin / 8] |= (1 << (pin % 8));
-    } else {
-      this->outBuffer[pin / 8] &= ~(1 << (pin % 8));
-    }
-  }
-
-  void update() {
-    // console.log('update', Array.from(this->outBuffer).map(_ => _.toString(2)).join(', '));
-    // console.log('update', Array.from(this->inBuffer).map(_ => _.toString(2)).join(', '));
-//    rpio.write(this->plPin, rpio.LOW);
-//    rpio.write(this->plPin, rpio.HIGH);
-//    rpio.write(this->csPin, rpio.LOW);
-//    rpio.spiTransfer(this->outBuffer, this->inBuffer, this->outBuffer.length);
-//    rpio.write(this->csPin, rpio.HIGH);
-  }
-};
 
 
 
@@ -340,67 +119,6 @@ class StepperMovement {
     }
 };
 
-
-class Iterator {
-  public:
-    Iterator() {
-      this->_done = false;
-    }
-
-    bool done() {
-      return this->_done;
-    }
-
-  protected:
-    bool _done;
-
-    void throwIfDone() {
-      if(this->done()) Nan::ThrowError("Iterator is done");
-    }
-};
-
-
-template<typename T>
-class ByteDecoder: public Iterator {
-  public:
-    ByteDecoder() {
-      this->_output = nullptr;
-    }
-
-    T * output() {
-      return this->_output;
-    }
-
-    virtual void next(uint8_t value) = 0;
-
-  protected:
-    T * _output;
-};
-
-template<typename T>
-class ByteStepDecoder: public ByteDecoder<T> {
-  public:
-
-    ByteStepDecoder() {
-      this->_step = 0;
-    }
-
-    virtual ~ByteStepDecoder() {}
-
-    void next(uint8_t value) override {
-      this->throwIfDone();
-      this->_next(value);
-    }
-
-  protected:
-    uint32_t _step;
-
-    void _init() {
-      this->_next(0);
-    }
-
-    virtual void _next(uint8_t value) = 0;
-};
 
 class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
   public:
@@ -588,7 +306,7 @@ public:
     this->initGPIO();
     this->stopAll();
 
-    this->addPWM(new PWM(0.5, 1e-5));
+    this->addPWM(0, new PWM(0.5, 1e-5));
   }
 
   ~AGCODERunner() {
