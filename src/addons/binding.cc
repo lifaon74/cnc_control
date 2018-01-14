@@ -13,7 +13,7 @@
 #include "classes/Codec.h"
 #include "classes/GPIOController.h"
 
-#include "libs/bcm2835/bcm2835.h"
+
 
 //#define math_max(x, y) ((x > y) ? x : y)
 //#define math_min(x, y) ((x < y) ? x : y)
@@ -267,8 +267,8 @@ class PWM {
 #define STEPPERS_ENABLED_REG 2
 #define PWM_REG 3
 
-#define GPIO_CS_PIN 7
-#define GPIO_PL_PIN 11
+#define GPIO_CS_PIN PINMAP_40[6] // pin #7
+#define GPIO_PL_PIN PINMAP_40[10] // pin #11
 #define GPIO_GROUP_SIZE 6
 
 #define PWM_CHANELS 8
@@ -483,7 +483,7 @@ public:
 
 protected:
   void initGPIO() {
-//    GPIOController.init();
+    GPIOController::init();
 
     this->gpioController = new GPIOController(
       GPIO_CS_PIN,

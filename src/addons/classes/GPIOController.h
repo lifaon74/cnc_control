@@ -1,17 +1,56 @@
 #ifndef GPIO_CONTROLLER_H
 #define GPIO_CONTROLLER_H
 
+#include "../libs/bcm2835/bcm2835.h"
+
+#define GPIO_INPUT 0x0
+#define GPIO_OUTPUT 0x1
+
+#define GPIO_LOW 0x0
+#define GPIO_HIGH 0x1
+
+int8_t PINMAP_40[] = {
+  -1, -1, /*  P1  P2 */
+  2, -1, /*  P3  P4 */
+  3, -1, /*  P5  P6 */
+  4, 14, /*  P7  P8 */
+  -1, 15, /*  P9  P10 */
+  17, 18, /* P11  P12 */
+  27, -1, /* P13  P14 */
+  22, 23, /* P15  P16 */
+  -1, 24, /* P17  P18 */
+  10, -1, /* P19  P20 */
+  9, 25, /* P21  P22 */
+  11, 8, /* P23  P24 */
+  -1, 7, /* P25  P26 */
+  0, 1, /* P27  P28 */
+  5, -1, /* P29  P30 */
+  6, 12, /* P31  P32 */
+  13, -1, /* P33  P34 */
+  19, 16, /* P35  P36 */
+  26, 20, /* P37  P38 */
+  -1, 21    /* P39  P40 */
+};
+
+
+void pinMode(uint8_t pin, uint8_t mode) {
+  bcm2835_gpio_fsel(pin, mode);
+}
+
+void digitalWrite(uint8_t pin, uint8_t state) {
+  bcm2835_gpio_write(pin, state);
+}
+
+
+
+
 class GPIOController {
   public:
-//  static init(): void {
-//    rpio.init({
-//      gpiomem: false,
-//      mapping: 'physical'
-//    });
-//
-//    rpio.spiBegin();
-//    rpio.spiSetClockDivider(16);
-//  }
+  static void init() {
+    bcm2835_init(false);
+    bcm2835_spi_begin();
+    bcm2835_spi_setClockDivider(16);
+  }
 
   uint8_t csPin;
   uint8_t plPin;
@@ -27,8 +66,10 @@ class GPIOController {
     this->outBuffer  = new uint8_t[length];
     this->inBuffer   = new uint8_t[length];
 
-//    rpio.open(this->csPin, rpio.OUTPUT, rpio.HIGH);
-//    rpio.open(this->plPin, rpio.OUTPUT, rpio.HIGH);
+    pinMode(this->csPin, GPIO_OUTPUT);
+    pinMode(this->plPin, GPIO_OUTPUT);
+    digitalWrite(this->csPin, GPIO_HIGH);
+    digitalWrite(this->plPin, GPIO_HIGH);
   }
 
   ~GPIOController() {
@@ -53,13 +94,12 @@ class GPIOController {
   }
 
   void update() {
-    // console.log('update', Array.from(this->outBuffer).map(_ => _.toString(2)).join(', '));
-    // console.log('update', Array.from(this->inBuffer).map(_ => _.toString(2)).join(', '));
-//    rpio.write(this->plPin, rpio.LOW);
-//    rpio.write(this->plPin, rpio.HIGH);
-//    rpio.write(this->csPin, rpio.LOW);
-//    rpio.spiTransfer(this->outBuffer, this->inBuffer, this->outBuffer.length);
-//    rpio.write(this->csPin, rpio.HIGH);
+    digitalWrite(this->plPin, GPIO_LOW);
+    digitalWrite(this->plPin, GPIO_HIGH);
+
+    digitalWrite(this->csPin, GPIO_LOW);
+    bcm2835_spi_transfernb((char *) this->outBuffer, (char *) this->inBuffer, this->length);
+    digitalWrite(this->csPin, GPIO_HIGH);
   }
 };
 
