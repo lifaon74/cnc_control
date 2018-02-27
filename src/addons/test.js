@@ -6,5 +6,6 @@
 
 const addon = require('./build/Release/binding');
 
+
 console.log(addon.startRunner());
 console.log('test');

@@ -126,18 +126,24 @@ export class GCODEOptimizer {
   static optimizeFile(path: string, config: ICONFIG): Promise<any> {
     const timer: Timer = new Timer();
     return GCODEHelper.parseFilePromise(path)
-      .then((data: GCODECommand[]) => {
+      .then((gcodeCommands: GCODECommand[]) => {
         timer.disp('opened in', 'ms');
 
         timer.clear();
-        const movementsSequence: ConstrainedSynchronizedMovementsSequence = this.parseGCODECommands(data, config);
+        const movementsSequence: ConstrainedSynchronizedMovementsSequence = this.parseGCODECommands(gcodeCommands, config);
         timer.disp('converted in', 'ms');
 
         const optimizedMovementsSequence: OptimizedSynchronizedMovementsSequence = this.optimizeConstrainedMovementsSequence(movementsSequence);
 
-        this.virtualRun(optimizedMovementsSequence);
+        console.log(optimizedMovementsSequence.toGCODECommands(gcodeCommands).map(_ => _.toString()).join('\n'));
+        // console.log(optimizedMovementsSequence.getBuffer('indices').join(', '));
+        // this.virtualRun(optimizedMovementsSequence);
 
-        return this.createAGCODEFile('../assets/test.bin.agcode', optimizedMovementsSequence, { binary: true });
+        return this.createAGCODEFile(
+          '../assets/test.bin.agcode',
+          optimizedMovementsSequence,
+          { binary: false }
+        );
       });
   }
 
@@ -274,7 +280,13 @@ export class GCODEOptimizer {
   }
 
 
-  static createAGCODEFile(path: string, movementsSequence: OptimizedSynchronizedMovementsSequence, options: { binary?: boolean } = {}): Promise<void> {
+
+
+  static createAGCODEFile(
+    path: string,
+    movementsSequence: OptimizedSynchronizedMovementsSequence,
+    options: { binary?: boolean } = {}
+  ): Promise<void> {
     return new Promise<void>((resolve: any) => {
       const file: number = $fs.openSync(path, 'w+');
       const movesLength: number = movementsSequence.children.length;

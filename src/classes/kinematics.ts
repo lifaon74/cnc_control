@@ -1,5 +1,7 @@
 import { Float } from './lib/Float';
 import { Matrix } from './lib/Matrix';
+import { GCODECommand } from '../optimize/gcodeHelper';
+import * as $fs from "fs";
 
 export type ArrayBufferView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
 
@@ -939,24 +941,6 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
     return true;
   }
 
-  toStepperMovementsSequence(): StepperMovementsSequence {
-    const movementsSequence = new StepperMovementsSequence(this.children.length);
-    movementsSequence.length = this._length;
-
-    for(let i = 0; i < this.children.length; i++) {
-      this.children[i].roundValues(movementsSequence.children[i]._buffers.values);
-    }
-
-    for(let i = 0; i < this._length; i++) {
-      movementsSequence._buffers.times[i] = this._buffers.times[i];
-      movementsSequence._buffers.initialSpeeds[i] = this._buffers.initialSpeeds[i];
-      movementsSequence._buffers.accelerations[i] = this._buffers.accelerations[i];
-    }
-
-    return movementsSequence;
-  }
-
-
   /**
    * DEBUG
    */
@@ -996,98 +980,45 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
     return str;
   }
 
+  toGCODECommands(gcodeCommands: GCODECommand[] = [], axisNames: string[] = ['X', 'Y', 'Z', 'E', 'G', 'H', 'I', 'J']): GCODECommand[] {
+    const _gcodeCommands: GCODECommand[] = [];
+
+    let gcodeCommandsIndex: number = 0;
+    const movesLength: number = this.children.length;
+
+    for (let i = 0; i < this._length; i++) {
+      const index: number = this._buffers['indices'][i];
+
+      if (gcodeCommandsIndex < index) {
+        for (; gcodeCommandsIndex < index; gcodeCommandsIndex++) {
+          _gcodeCommands.push(gcodeCommands[gcodeCommandsIndex]);
+        }
+      }
+      gcodeCommandsIndex = index + 1;
+
+      const params: any = {
+        T: this._buffers['times'][i],
+        S: this._buffers['initialSpeeds'][i],
+        A: this._buffers['accelerations'][i],
+      };
+
+      for(let j = 0; j < movesLength; j++) {
+        const value: number = this.children[j]._buffers['values'][i];
+        if (value !== 0) {
+          params[axisNames[j]] = value;
+        }
+      }
+
+      _gcodeCommands.push(new GCODECommand('G5', params));
+    }
+
+    for (let l = gcodeCommands.length; gcodeCommandsIndex < l; gcodeCommandsIndex++) {
+      _gcodeCommands.push(gcodeCommands[gcodeCommandsIndex]);
+    }
+    console.log('------');
+
+    return _gcodeCommands;
+  }
 }
 
-
-
-
-
-// not used
-
-export class StepperMovesSequence extends CorrelatedArrayBuffers {
-  constructor(allocated?: number) {
-    super(allocated, {
-      'values': Int32Array,
-      'positions': Uint32Array,
-    });
-  }
-}
-
-export class StepperMovementsSequence extends CorrelatedArrayBuffersTree {
-  public children: StepperMovesSequence[] = [];
-
-  constructor(numberOfParallelMoves: number) {
-    super(0, {
-      'times': Float64Array,
-      'initialSpeeds': Float64Array,
-      'accelerations': Float64Array
-    });
-
-    for(let i = 0; i < numberOfParallelMoves; i++) {
-      this.children[i] = new StepperMovesSequence(this._allocated);
-    }
-  }
-
-  reduce() {
-    let writeIndex: number = 0;
-    for(let i = 0; i < this._length; i++) {
-      if(!this.isNull(i)) {
-        this.move(writeIndex, i);
-        writeIndex++;
-      }
-    }
-    this.length = writeIndex;
-  }
-
-  isNull(index: number): boolean {
-    for(let i = 0; i < this.children.length; i++) {
-      if(this.children[i]._buffers.values[index] !== 0) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-
-  /**
-   * DEBUG
-   */
-  toString(index: number = -1, type: string = 'values'): string {
-    if(index === -1) {
-      let str: string = '';
-      for(let i = 0, length = Math.min(30, this.length); i < length; i++) {
-        str += this.toString(i, type) + '\n----\n';
-      }
-      return str;
-    } else {
-      switch(type) {
-        case 'values':
-          return 'time: ' + this._buffers.times[index] + ' => ' +
-            this.children.map((move: StepperMovesSequence) => {
-              // return move.toString(index);
-              let value = move._buffers.values[index];
-              return '{ ' +
-                'value: ' + value +
-                ', speed: ' + value * this._buffers.initialSpeeds[index] +
-                ', accel: ' + value * this._buffers.accelerations[index] +
-                ' }';
-            }).join(', ');
-        case 'times':
-          return 'time: ' + this._buffers.times[index] + ' => ' +
-            this.children.map((move: StepperMovesSequence) => {
-              // return move.toString(index);
-              let value = move._buffers.values[index];
-              let computed = 0.5 * this._buffers.accelerations[index] * this._buffers.times[index] * this._buffers.times[index] + this._buffers.initialSpeeds[index] * this._buffers.times[index];
-              return '{ ' +
-                'value: ' + value +
-                ', computed: ' + computed * value +
-                ' }' + (Float.equals(computed, 1, 1e-9)? '' : '=>>>>>>>>[ERROR]');
-            }).join(', ');
-        default:
-          return '';
-      }
-    }
-  }
-
-}
 

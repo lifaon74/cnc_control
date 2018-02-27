@@ -298,7 +298,7 @@ function createTower(path: string): Promise<void> {
 }
 
 // createCircle('../assets/circle.gcode');
-createSquare('../assets/square.gcode');
+// createSquare('../assets/square.gcode');
 // createTower('../assets/tower.gcode');
 
 // console.log(GCODEHelper.moveTo([], 10, 10)[0].toString());
