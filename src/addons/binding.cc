@@ -30,7 +30,23 @@ double GetTime() {
 
 
 
+/**
+  COMMANDS:
+  [
+    CMD_ID, // uint16, 2B -> the id of the command (used to identify it in the queue). 0xffff reserved, to know if command should be executed immediatly or put in queue
+    CMD_CODE, // uint8, 1B -> the command of command (what should be done)
+    ...CMD_DATA
+  ]
 
+
+  list:
+  - 0x00 -> stop all
+  - 0x01 -> define endstops
+
+
+
+  define ENDSTOPS
+**/
 
 /***
     StepperMovement
@@ -128,7 +144,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
     }
 
     ~StepperMovementDecoder() {
-//      delete this->_output;
+      // delete this->_output;
     }
 
   protected:
@@ -245,7 +261,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
 class PWM {
   public:
     double value;
-    double period;
+    double period; // in seconds
 
     PWM(double value, double period) {
       this->value = value;
@@ -260,6 +276,131 @@ class PWM {
       return this->isActive(time) ? 1 : 0;
     }
 };
+
+
+// TODO
+class PWMDecoder: public ByteStepDecoder<PWM> {
+  public:
+    PWMDecoder() {
+      this->_output = new PWM();
+      this->_init();
+    }
+
+    ~PWMDecoder() {
+      // delete this->_output;
+    }
+
+    uint8_t pin() {
+      return this->_pin;
+    }
+
+  protected: // TODO
+    uint8_t _pin;
+    Uint8Array * _bytes;
+    uint32_t _index;
+    uint8_t _moveIndex;
+
+    void _next(uint8_t value) {
+      while(true) {
+//      std::cout << "step: " << this->_step << "\n";
+
+        switch(this->_step) {
+          case 0: // init
+            this->_step = 1;
+            return;
+
+          case 1: // pinMask
+            for(uint8_t i = 0; i < 8; i++) {
+              if(value & (1 << i)) {
+                this->_output->moves.push_back(new StepperMove(i, 0));
+              }
+            }
+            this->_bytes = new Uint8Array(8);
+            this->_index = 0;
+            this->_step = 2;
+
+          case 2: // duration
+            if(this->_index >= this->_bytes->length) {
+              this->_output->duration = ((double *) (this->_bytes->buffer))[0];
+              this->_index = 0;
+              this->_step = 4;
+              break;
+            } else {
+              this->_step = 3;
+              return;
+            }
+          case 3:
+            this->_bytes->buffer[this->_index++] = value;
+            this->_step = 2;
+            break;
+
+          case 4: // initialSpeed
+            if(this->_index >= this->_bytes->length) {
+              this->_output->initialSpeed = ((double *) (this->_bytes->buffer))[0];
+              this->_index = 0;
+              this->_step = 6;
+              break;
+            } else {
+              this->_step = 5;
+              return;
+            }
+          case 5:
+            this->_bytes->buffer[this->_index++] = value;
+            this->_step = 4;
+            break;
+
+          case 6: // acceleration
+            if(this->_index >= this->_bytes->length) {
+              this->_output->acceleration = ((double *) (this->_bytes->buffer))[0];
+              this->_moveIndex = 0;
+              this->_step = 8;
+              break;
+            } else {
+              this->_step = 7;
+              return;
+            }
+          case 7:
+            this->_bytes->buffer[this->_index++] = value;
+            this->_step = 6;
+            break;
+
+          case 8: // movements
+            if(this->_moveIndex >= this->_output->moves.size()) {
+              this->_done = true;
+              delete this->_bytes;
+              return;
+            } else {
+              delete this->_bytes;
+              this->_bytes = new Uint8Array(4);
+              this->_index = 0;
+              this->_step = 9;
+            }
+
+          case 9: // movement distance
+            if(this->_index >= this->_bytes->length) {
+              this->_output->moves[this->_moveIndex]->target = ((int32_t *) (this->_bytes->buffer))[0];
+              this->_moveIndex++;
+              this->_step = 8;
+              break;
+            } else {
+              this->_step = 10;
+              return;
+            }
+          case 10:
+            this->_bytes->buffer[this->_index++] = value;
+            this->_step = 9;
+            break;
+
+          default:
+//            throw std::logic_error("Unexpected step : " + this->_step);
+            Nan::ThrowError("Unexpected step : " + this->_step);
+            return;
+        }
+      }
+    }
+}
+
+
 
 
 #define STEPPERS_STEP_REG 0
@@ -372,11 +513,11 @@ public:
 
 
   void updateMovement(double time) {
-    if(this->stepping) {
+    if(this->stepping) { //if we are stepping, invert step register
       this->gpioController->outBuffer[STEPPERS_STEP_REG] = 0b00000000;
       this->stepping = false;
     } else {
-      if(this->currentMove != nullptr) {
+      if(this->currentMove != nullptr) { // if a move is available
         double elapsedTime = time - this->currentMove->initialTime;
         double positionFactor = (
           this->currentMove->acceleration * elapsedTime * elapsedTime * 0.5 +

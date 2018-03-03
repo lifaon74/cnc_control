@@ -135,7 +135,7 @@ export class GCODEOptimizer {
 
         const optimizedMovementsSequence: OptimizedSynchronizedMovementsSequence = this.optimizeConstrainedMovementsSequence(movementsSequence);
 
-        console.log(optimizedMovementsSequence.toGCODECommands(gcodeCommands).map(_ => _.toString()).join('\n'));
+        console.log(optimizedMovementsSequence.toGCODECommands(gcodeCommands).map(_ => _.toString(1e-3)).join('\n'));
         // console.log(optimizedMovementsSequence.getBuffer('indices').join(', '));
         // this.virtualRun(optimizedMovementsSequence);
 
