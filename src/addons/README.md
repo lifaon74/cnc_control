@@ -15,13 +15,15 @@ then every answers have to following structure:
 
 - `CMD_ID` *(uint16)*: the id of the command which is finished.
 `0xffff` reserved, in case of special interruptions from slave (ex: material default, etc...)
-- [OPTIONAL: in case of CMD_ID = 0xffff] `CMD_CODE` *(uint8)*: the code of the answer sent by the slave
+- `CMD_STATE` *(uint8)*: 
+  - 0x00: if command succeed
+  - != 0x00 if command failed
 - `...CMD_DATA`: extra data of the answer
 
 
 ###LIST OF MASTER COMMANDS
 
-#### STOP ALL 0x00
+#### STOP 0x00
 Stop all actions, clear queue and reset all states.
 
 Master data: NONE
@@ -66,7 +68,7 @@ Slave data:
 - `...JSON`: the json data
 
 
-#### READ_INPUTS 0x05
+#### READ INPUTS 0x05
 Red the slave inputs.
 Master data: NONE
 
@@ -90,6 +92,15 @@ Master data:
 Slave data: NONE
 
 
+#### HOME 0x08
+Home axis.
+
+Master data:
+- `PIN_MASK` *(uint_8)*: inform which pins/axis will be homed.
+
+Slave data: NONE
+
+
 #### PWM 0x07
 Set a PWM. If value equals 0, disable pwm.
     
@@ -101,11 +112,11 @@ Master data:
 Slave data: NONE
 
 
-#### MOVE 0x08
+#### MOVE 0x09
 Do a coordinated move. Slave answer when move is done.
     
 Master data:
-- `PIN_MASK` *(uint_8)*: inform which pins will be used.
+- `PIN_MASK` *(uint_8)*: inform which pins/axis will be used.
 - `DURATION` *(float32|float64)*: the duration in seconds of the move
 - `INITIAL_SPEED` *(float32|float64)*: the initial speed of the move
 - `ACCELERATION` *(float32|float64)*: the acceleration of the move
@@ -113,4 +124,3 @@ Master data:
   - `DISTANCE` *(int_32)*: the distance in steps (positive or negative) of the move on axis `i`
 
 Slave data: NONE
-

@@ -42,7 +42,7 @@ class ByteStepDecoder: public ByteDecoder<T> {
   public:
 
     ByteStepDecoder() {
-      this->_step = 0;
+      this->_init();
     }
 
     virtual ~ByteStepDecoder() {}
@@ -56,6 +56,7 @@ class ByteStepDecoder: public ByteDecoder<T> {
     uint32_t _step;
 
     void _init() {
+      this->_step = 0;
       this->_next(0);
     }
 

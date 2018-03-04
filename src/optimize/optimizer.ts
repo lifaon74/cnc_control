@@ -8,6 +8,7 @@ import {
 import { Timer } from '../classes/Timer';
 import { Float } from '../classes/lib/Float';
 
+// color mixin: https://arxiv.org/ftp/arxiv/papers/1710/1710.06364.pdf
 
 
 const MOTOR_STEPS = 200;

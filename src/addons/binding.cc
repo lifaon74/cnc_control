@@ -30,24 +30,6 @@ double GetTime() {
 
 
 
-/**
-  COMMANDS:
-  [
-    CMD_ID, // uint16, 2B -> the id of the command (used to identify it in the queue). 0xffff reserved, to know if command should be executed immediatly or put in queue
-    CMD_CODE, // uint8, 1B -> the command of command (what should be done)
-    ...CMD_DATA
-  ]
-
-
-  list:
-  - 0x00 -> stop all
-  - 0x01 -> define endstops
-
-
-
-  define ENDSTOPS
-**/
-
 /***
     StepperMovement
 ****/
@@ -282,8 +264,6 @@ class PWM {
 class PWMDecoder: public ByteStepDecoder<PWM> {
   public:
     PWMDecoder() {
-      this->_output = new PWM();
-      this->_init();
     }
 
     ~PWMDecoder() {
@@ -298,7 +278,6 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
     uint8_t _pin;
     Uint8Array * _bytes;
     uint32_t _index;
-    uint8_t _moveIndex;
 
     void _next(uint8_t value) {
       while(true) {
@@ -306,22 +285,19 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
 
         switch(this->_step) {
           case 0: // init
+            this->_output = new PWM();
             this->_step = 1;
             return;
 
-          case 1: // pinMask
-            for(uint8_t i = 0; i < 8; i++) {
-              if(value & (1 << i)) {
-                this->_output->moves.push_back(new StepperMove(i, 0));
-              }
-            }
+          case 1: // pin
+            this->_pin = value;
             this->_bytes = new Uint8Array(8);
             this->_index = 0;
             this->_step = 2;
 
-          case 2: // duration
+          case 2: // value
             if(this->_index >= this->_bytes->length) {
-              this->_output->duration = ((double *) (this->_bytes->buffer))[0];
+              this->_output->value = ((double *) (this->_bytes->buffer))[0];
               this->_index = 0;
               this->_step = 4;
               break;
@@ -329,66 +305,26 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
               this->_step = 3;
               return;
             }
+
           case 3:
             this->_bytes->buffer[this->_index++] = value;
             this->_step = 2;
             break;
 
-          case 4: // initialSpeed
+          case 4: // period
             if(this->_index >= this->_bytes->length) {
-              this->_output->initialSpeed = ((double *) (this->_bytes->buffer))[0];
-              this->_index = 0;
-              this->_step = 6;
-              break;
-            } else {
-              this->_step = 5;
-              return;
-            }
-          case 5:
-            this->_bytes->buffer[this->_index++] = value;
-            this->_step = 4;
-            break;
-
-          case 6: // acceleration
-            if(this->_index >= this->_bytes->length) {
-              this->_output->acceleration = ((double *) (this->_bytes->buffer))[0];
-              this->_moveIndex = 0;
-              this->_step = 8;
-              break;
-            } else {
-              this->_step = 7;
-              return;
-            }
-          case 7:
-            this->_bytes->buffer[this->_index++] = value;
-            this->_step = 6;
-            break;
-
-          case 8: // movements
-            if(this->_moveIndex >= this->_output->moves.size()) {
+              this->_output->value = ((double *) (this->_bytes->buffer))[0];
               this->_done = true;
               delete this->_bytes;
               return;
             } else {
-              delete this->_bytes;
-              this->_bytes = new Uint8Array(4);
-              this->_index = 0;
-              this->_step = 9;
-            }
-
-          case 9: // movement distance
-            if(this->_index >= this->_bytes->length) {
-              this->_output->moves[this->_moveIndex]->target = ((int32_t *) (this->_bytes->buffer))[0];
-              this->_moveIndex++;
-              this->_step = 8;
-              break;
-            } else {
-              this->_step = 10;
+              this->_step = 5;
               return;
             }
-          case 10:
+
+          case 5:
             this->_bytes->buffer[this->_index++] = value;
-            this->_step = 9;
+            this->_step = 4;
             break;
 
           default:
@@ -399,6 +335,109 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
       }
     }
 }
+
+
+
+
+
+class Command {
+  public:
+    uint8_t code;
+    void * command;
+
+    Command(uint8_t code, void * command) {
+      this->code = code;
+      this->command = command;
+    }
+
+    ~Command() {
+      delete (this->command);
+    }
+}
+
+
+#define CMD_STOP 0x00
+#define CMD_PAUSE 0x01
+#define CMD_RESUME 0x02
+#define CMD_SET_PRECISION 0x03
+#define CMD_GET_CAPABILITIES 0x04
+#define CMD_READ_INPUTS 0x05
+#define CMD_DEFINE ENDSTOPS 0x06
+#define CMD_HOME 0x07
+#define CMD_PWM 0x08
+#define CMD_MOVE 0x09
+
+class CommandDecoder : public ByteStepDecoder<Command> {
+  public:
+    CommandDecoder() {
+      this->_output = new Command();
+      this->_init();
+    }
+
+    uint16_t id() {
+      return this->_id;
+    }
+
+  protected:
+    uint16_t _id;
+    uint8_t _code;
+    ByteStepDecoder<void *> _decoder;
+
+    void _next(uint8_t value) {
+      while(true) {
+//      std::cout << "step: " << this->_step << "\n";
+
+        switch(this->_step) {
+          case 0: // init
+            this->_step = 1;
+            return;
+
+          case 1: // id low
+            this->_id = value;
+            this->_step = 2;
+            return;
+
+          case 2: // id high
+            this->_id |= value << 8;
+            this->_step = 3;
+            return;
+
+          case 3: // code
+            this->_code = value;
+            switch (this->_code) {
+              case CMD_MOVE:
+                this->_decoder = new StepperMovementDecoder();
+                break;
+              default:
+                Nan::ThrowError("Unexpected command : " + this->_code);
+                return;
+            }
+            this->_step = 4;
+
+          case 4: // decode command
+            if(this->_decoder->done()) {
+              this->_output = new Command(this->_code, this->_decoder->output());
+              this->_done = true;
+              delete (this->_decoder);
+              return;
+            } else {
+              this->_step = 5;
+              return;
+            }
+          case 5:
+            this->_output->next(value);
+            this->_step = 4;
+            break;
+
+          default:
+//            throw std::logic_error("Unexpected step : " + this->_step);
+            Nan::ThrowError("Unexpected step : " + this->_step);
+            return;
+        }
+      }
+    }
+}
+
 
 
 
