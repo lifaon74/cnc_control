@@ -1,7 +1,9 @@
 #ifndef GPIO_CONTROLLER_H
 #define GPIO_CONTROLLER_H
 
-#include "../libs/bcm2835/bcm2835.h"
+#ifdef RASPBERRY
+  #include "../libs/bcm2835/bcm2835.h"
+#endif
 
 #define GPIO_INPUT 0x0
 #define GPIO_OUTPUT 0x1
@@ -34,11 +36,15 @@ int8_t PINMAP_40[] = {
 
 
 void pinMode(uint8_t pin, uint8_t mode) {
-  bcm2835_gpio_fsel(pin, mode);
+  #ifdef RASPBERRY
+    bcm2835_gpio_fsel(pin, mode);
+  #endif
 }
 
 void digitalWrite(uint8_t pin, uint8_t state) {
-  bcm2835_gpio_write(pin, state);
+  #ifdef RASPBERRY
+    bcm2835_gpio_write(pin, state);
+  #endif
 }
 
 
@@ -47,9 +53,11 @@ void digitalWrite(uint8_t pin, uint8_t state) {
 class GPIOController {
   public:
   static void init() {
-    bcm2835_init(false);
-    bcm2835_spi_begin();
-    bcm2835_spi_setClockDivider(16);
+    #ifdef RASPBERRY
+      bcm2835_init(false);
+      bcm2835_spi_begin();
+      bcm2835_spi_setClockDivider(16);
+    #endif
   }
 
   uint8_t csPin;
@@ -98,7 +106,9 @@ class GPIOController {
     digitalWrite(this->plPin, GPIO_HIGH);
 
     digitalWrite(this->csPin, GPIO_LOW);
-    bcm2835_spi_transfernb((char *) this->outBuffer, (char *) this->inBuffer, this->length);
+    #ifdef RASPBERRY
+      bcm2835_spi_transfernb((char *) this->outBuffer, (char *) this->inBuffer, this->length);
+    #endif
     digitalWrite(this->csPin, GPIO_HIGH);
   }
 };

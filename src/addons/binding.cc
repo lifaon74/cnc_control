@@ -6,11 +6,12 @@
 #include <iostream>
 
 
+#define RASPBERRY
 
 
 #include "classes/TypedArray.h"
 #include "classes/SharedBufferStream.h"
-#include "classes/Codec.h"
+#include "classes/codec/codec.h"
 #include "classes/GPIOController.h"
 
 
@@ -27,7 +28,6 @@
 double GetTime() {
   return ((double) std::clock()) / CLOCKS_PER_SEC;
 }
-
 
 
 /***
@@ -245,7 +245,7 @@ class PWM {
     double value;
     double period; // in seconds
 
-    PWM(double value, double period) {
+    PWM(double value = 0, double period = 1) {
       this->value = value;
       this->period = period;
     }
@@ -261,80 +261,80 @@ class PWM {
 
 
 // TODO
-class PWMDecoder: public ByteStepDecoder<PWM> {
-  public:
-    PWMDecoder() {
-    }
-
-    ~PWMDecoder() {
-      // delete this->_output;
-    }
-
-    uint8_t pin() {
-      return this->_pin;
-    }
-
-  protected: // TODO
-    uint8_t _pin;
-    Uint8Array * _bytes;
-    uint32_t _index;
-
-    void _next(uint8_t value) {
-      while(true) {
-//      std::cout << "step: " << this->_step << "\n";
-
-        switch(this->_step) {
-          case 0: // init
-            this->_output = new PWM();
-            this->_step = 1;
-            return;
-
-          case 1: // pin
-            this->_pin = value;
-            this->_bytes = new Uint8Array(8);
-            this->_index = 0;
-            this->_step = 2;
-
-          case 2: // value
-            if(this->_index >= this->_bytes->length) {
-              this->_output->value = ((double *) (this->_bytes->buffer))[0];
-              this->_index = 0;
-              this->_step = 4;
-              break;
-            } else {
-              this->_step = 3;
-              return;
-            }
-
-          case 3:
-            this->_bytes->buffer[this->_index++] = value;
-            this->_step = 2;
-            break;
-
-          case 4: // period
-            if(this->_index >= this->_bytes->length) {
-              this->_output->value = ((double *) (this->_bytes->buffer))[0];
-              this->_done = true;
-              delete this->_bytes;
-              return;
-            } else {
-              this->_step = 5;
-              return;
-            }
-
-          case 5:
-            this->_bytes->buffer[this->_index++] = value;
-            this->_step = 4;
-            break;
-
-          default:
-//            throw std::logic_error("Unexpected step : " + this->_step);
-            Nan::ThrowError("Unexpected step : " + this->_step);
-            return;
-        }
-      }
-    }
-}
+//class PWMDecoder: public ByteStepDecoder<PWM> {
+//  public:
+//    PWMDecoder() {
+//    }
+//
+//    ~PWMDecoder() {
+//      // delete this->_output;
+//    }
+//
+//    uint8_t pin() {
+//      return this->_pin;
+//    }
+//
+//  protected: // TODO
+//    uint8_t _pin;
+//    Uint8Array * _bytes;
+//    uint32_t _index;
+//
+//    void _next(uint8_t value) {
+//      while(true) {
+////      std::cout << "step: " << this->_step << "\n";
+//
+//        switch(this->_step) {
+//          case 0: // init
+//            this->_output = new PWM();
+//            this->_step = 1;
+//            return;
+//
+//          case 1: // pin
+//            this->_pin = value;
+//            this->_bytes = new Uint8Array(8);
+//            this->_index = 0;
+//            this->_step = 2;
+//
+//          case 2: // value
+//            if(this->_index >= this->_bytes->length) {
+//              this->_output->value = ((double *) (this->_bytes->buffer))[0];
+//              this->_index = 0;
+//              this->_step = 4;
+//              break;
+//            } else {
+//              this->_step = 3;
+//              return;
+//            }
+//
+//          case 3:
+//            this->_bytes->buffer[this->_index++] = value;
+//            this->_step = 2;
+//            break;
+//
+//          case 4: // period
+//            if(this->_index >= this->_bytes->length) {
+//              this->_output->value = ((double *) (this->_bytes->buffer))[0];
+//              this->_done = true;
+//              delete this->_bytes;
+//              return;
+//            } else {
+//              this->_step = 5;
+//              return;
+//            }
+//
+//          case 5:
+//            this->_bytes->buffer[this->_index++] = value;
+//            this->_step = 4;
+//            break;
+//
+//          default:
+////            throw std::logic_error("Unexpected step : " + this->_step);
+//            Nan::ThrowError("Unexpected step : " + this->_step);
+//            return;
+//        }
+//      }
+//    }
+//}
 
 
 
@@ -345,15 +345,16 @@ class Command {
     uint8_t code;
     void * command;
 
-    Command(uint8_t code, void * command) {
+    Command(uint8_t code = 0, void * command = nullptr) {
       this->code = code;
       this->command = command;
     }
 
     ~Command() {
-      delete (this->command);
+      //  TODO use switch to delete command properly
+      //  delete (this->command);
     }
-}
+};
 
 
 #define CMD_STOP 0x00
@@ -366,6 +367,8 @@ class Command {
 #define CMD_HOME 0x07
 #define CMD_PWM 0x08
 #define CMD_MOVE 0x09
+
+#define BYTE_STEP_DECODER_TYPE (ByteStepDecoder<void *>*)
 
 class CommandDecoder : public ByteStepDecoder<Command> {
   public:
@@ -381,7 +384,7 @@ class CommandDecoder : public ByteStepDecoder<Command> {
   protected:
     uint16_t _id;
     uint8_t _code;
-    ByteStepDecoder<void *> _decoder;
+    void * _decoder; // ByteStepDecoder<T>
 
     void _next(uint8_t value) {
       while(true) {
@@ -415,17 +418,17 @@ class CommandDecoder : public ByteStepDecoder<Command> {
             this->_step = 4;
 
           case 4: // decode command
-            if(this->_decoder->done()) {
-              this->_output = new Command(this->_code, this->_decoder->output());
+            if((BYTE_STEP_DECODER_TYPE(this->_decoder))->done()) {
+              this->_output = new Command(this->_code, (BYTE_STEP_DECODER_TYPE(this->_decoder))->output());
               this->_done = true;
-              delete (this->_decoder);
+              delete (BYTE_STEP_DECODER_TYPE(this->_decoder));
               return;
             } else {
               this->_step = 5;
               return;
             }
           case 5:
-            this->_output->next(value);
+            (BYTE_STEP_DECODER_TYPE(this->_decoder))->next(value);
             this->_step = 4;
             break;
 
@@ -436,7 +439,7 @@ class CommandDecoder : public ByteStepDecoder<Command> {
         }
       }
     }
-}
+};
 
 
 

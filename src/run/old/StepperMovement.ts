@@ -1,5 +1,4 @@
-import { ByteStepDecoder, ByteStepEncoder, codec, decode, encode } from '../classes/lib/codec';
-import { GetTime } from '../classes/misc';
+import { GetTime } from '../../../classes/misc';
 
 export class StepperMove {
   public pin: number;

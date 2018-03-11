@@ -1,9 +1,9 @@
-import { config } from './config';
-import { StepperMove, StepperMovement, StepperMovementDecoder } from './StepperMovement';
-import { codec } from '../classes/lib/codec';
-import { $delay, GetTime } from '../classes/misc';
+import { config } from '../config';
+import { StepperMove, StepperMovement, StepperMovementDecoder } from '../codec/stepper-movement/StepperMovement';
+import { codec } from '../../classes/lib/codec';
+import { $delay, GetTime } from '../../classes/misc';
 import { GPIOController, SPIController } from './gpio';
-import { SharedBufferStream } from './SharedBufferStream';
+import { SharedBufferStream } from '../SharedBufferStream';
 
 
 

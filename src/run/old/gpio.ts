@@ -1,5 +1,5 @@
 import * as rpio from 'rpio';
-import { $delay } from '../classes/misc';
+import { $delay } from '../../classes/misc';
 
 export class SPIController {
 

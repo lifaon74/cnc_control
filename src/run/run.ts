@@ -80,5 +80,6 @@ if ($cluster.isMaster) {
 
   masterProgram();
 } else {
+  require('../addons/test.js');
   // forkProgram();
 }

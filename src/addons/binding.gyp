@@ -6,7 +6,7 @@
         "V8_DEPRECATION_WARNINGS=1"
       ],
       "sources": [
-        "binding.cc"
+        "binding.cc", "libs/bcm2835/bcm2835.c"
       ],
       "include_dirs": [
         "<!(node -e \"require('nan')\")"
