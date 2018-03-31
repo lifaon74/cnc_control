@@ -1,6 +1,6 @@
-import { codec, encode } from '../../../classes/lib/codec/helpers';
+import { codec, encode } from '../../../../classes/lib/codec/helpers';
 import { CommandEncoder } from './CommandEncoder';
-import { StepperMove, StepperMovement } from '../stepper-movement/StepperMovement';
+import { StepperMove, StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command, CommandCodes } from './Command';
 import { CommandDecoder } from './CommandDecoder';
 

@@ -1,5 +1,5 @@
 import { config } from '../config';
-import { StepperMove, StepperMovement, StepperMovementDecoder } from '../codec/stepper-movement/StepperMovement';
+import { StepperMove, StepperMovement, StepperMovementDecoder } from '../codec/stepper-movement/ts/StepperMovement';
 import { codec } from '../../classes/lib/codec';
 import { $delay, GetTime } from '../../classes/misc';
 import { GPIOController, SPIController } from './gpio';

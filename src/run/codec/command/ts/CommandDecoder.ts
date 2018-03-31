@@ -1,6 +1,6 @@
-import { ByteStepDecoder } from '../../../classes/lib/codec/byte-step/ByteStepDecoder';
+import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ByteStepDecoder';
 import { Command, CommandCodes } from './Command';
-import { StepperMovementDecoder } from '../stepper-movement/StepperMovementDecoder';
+import { StepperMovementDecoder } from '../../stepper-movement/ts/StepperMovementDecoder';
 
 export class CommandDecoder extends ByteStepDecoder<Command> {
   protected _decoder: ByteStepDecoder<any>;

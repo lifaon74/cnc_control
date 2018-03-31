@@ -1,5 +1,5 @@
 import { StepperMove, StepperMovement } from './StepperMovement';
-import { codec } from '../../../classes/lib/codec/helpers';
+import { codec } from '../../../../classes/lib/codec/helpers';
 import { StepperMovementEncoder } from './StepperMovementEncoder';
 import { StepperMovementDecoder } from './StepperMovementDecoder';
 

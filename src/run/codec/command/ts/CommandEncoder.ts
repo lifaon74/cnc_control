@@ -1,6 +1,6 @@
-import { ByteStepEncoder } from '../../../classes/lib/codec/byte-step/ByteStepEncoder';
-import { StepperMovementEncoder } from '../stepper-movement/StepperMovementEncoder';
-import { StepperMovement } from '../stepper-movement/StepperMovement';
+import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ByteStepEncoder';
+import { StepperMovementEncoder } from '../../stepper-movement/ts/StepperMovementEncoder';
+import { StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command } from './Command';
 
 export class CommandEncoder extends ByteStepEncoder<Command> {
