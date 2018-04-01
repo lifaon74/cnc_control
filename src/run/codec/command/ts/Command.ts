@@ -1,4 +1,5 @@
 export enum CommandCodes {
+  PWM = 0x07,
   MOVE = 0x09,
 }
 

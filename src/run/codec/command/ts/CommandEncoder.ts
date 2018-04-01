@@ -2,6 +2,8 @@ import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ByteSte
 import { StepperMovementEncoder } from '../../stepper-movement/ts/StepperMovementEncoder';
 import { StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command } from './Command';
+import { PWM } from '../../pwm/ts/PWM';
+import { PWMEncoder } from '../../pwm/ts/PWMEncoder';
 
 export class CommandEncoder extends ByteStepEncoder<Command> {
   protected _encoder: ByteStepEncoder<any>;
@@ -21,7 +23,9 @@ export class CommandEncoder extends ByteStepEncoder<Command> {
         return (this._input.id >> 8) & 0xff;
 
       case 2: // code
-        if (this._input.command instanceof StepperMovement) {
+        if (this._input.command instanceof PWM) {
+          this._encoder = new PWMEncoder(this._input.command);
+        } else if (this._input.command instanceof StepperMovement) {
           this._encoder = new StepperMovementEncoder(this._input.command);
         } else {
           throw new Error(`Invalid command type`);

@@ -92,7 +92,7 @@ Master data:
 Slave data: NONE
 
 
-#### HOME 0x08
+#### HOME 0x07
 Home axis.
 
 Master data:
@@ -101,7 +101,7 @@ Master data:
 Slave data: NONE
 
 
-#### PWM 0x07
+#### PWM 0x08
 Set a PWM. If value equals 0, disable pwm.
     
 Master data:

@@ -3,8 +3,11 @@ import { CommandEncoder } from './CommandEncoder';
 import { StepperMove, StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command, CommandCodes } from './Command';
 import { CommandDecoder } from './CommandDecoder';
+import { PWM } from '../../pwm/ts/PWM';
 
 async function test() {
+  let cmd: Command;
+
   const stepperMovement: StepperMovement = new StepperMovement();
   stepperMovement.duration = 10;
   stepperMovement.initialSpeed = 0.5;
@@ -12,7 +15,13 @@ async function test() {
   stepperMovement.moves.push(new StepperMove(2, 17));
   stepperMovement.moves.push(new StepperMove(3, -28));
 
-  const cmd: Command = new Command(123, CommandCodes.MOVE, stepperMovement);
+  // cmd = new Command(123, CommandCodes.MOVE, stepperMovement);
+  // codec(new CommandEncoder(cmd), new CommandDecoder());
+
+
+  const pwm: PWM = new PWM(1, 0.5, 1.23);
+
+  cmd = new Command(123, CommandCodes.PWM, pwm);
   codec(new CommandEncoder(cmd), new CommandDecoder());
 }
 

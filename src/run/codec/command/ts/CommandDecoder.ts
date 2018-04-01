@@ -1,6 +1,7 @@
 import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ByteStepDecoder';
 import { Command, CommandCodes } from './Command';
 import { StepperMovementDecoder } from '../../stepper-movement/ts/StepperMovementDecoder';
+import { PWMDecoder } from '../../pwm/ts/PWMDecoder';
 
 export class CommandDecoder extends ByteStepDecoder<Command> {
   protected _decoder: ByteStepDecoder<any>;
@@ -30,6 +31,9 @@ export class CommandDecoder extends ByteStepDecoder<Command> {
         case 3: // code
           this._output.code = value;
           switch (value) {
+            case CommandCodes.PWM:
+              this._decoder = new PWMDecoder();
+              break;
             case CommandCodes.MOVE:
               this._decoder = new StepperMovementDecoder();
               break;

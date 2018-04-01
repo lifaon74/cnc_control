@@ -13,7 +13,9 @@ export function encode<T = any>(encoder: ByteEncoder<T>): number[] {
 export function decode<T = any>(decoder: ByteDecoder<T>, buffer: number[]): T {
   let i = 0;
   while(!decoder.done) {
-    if(i >= buffer.length) throw new Error('Buffer overflow');
+    if(i >= buffer.length) {
+      throw new Error('Buffer overflow');
+    }
     decoder.next(buffer[i]);
     i++;
   }
