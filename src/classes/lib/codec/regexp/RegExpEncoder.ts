@@ -1,4 +1,4 @@
-import { ByteStepEncoder } from '../byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../byte-step/ts/ByteStepEncoder';
 import { StringEncoder } from '../string/StringEncoder';
 
 export class RegExpEncoder extends ByteStepEncoder<RegExp> {

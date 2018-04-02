@@ -1,5 +1,5 @@
-import { ByteEncoder } from './byte/ByteEncoder';
-import { ByteDecoder } from './byte/ByteDecoder';
+import { ByteEncoder } from './byte/ts/ByteEncoder';
+import { ByteDecoder } from './byte/ts/ByteDecoder';
 
 
 export function encode<T = any>(encoder: ByteEncoder<T>): number[] {

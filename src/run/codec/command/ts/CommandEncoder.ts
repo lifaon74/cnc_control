@@ -1,4 +1,4 @@
-import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
 import { StepperMovementEncoder } from '../../stepper-movement/ts/StepperMovementEncoder';
 import { StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command } from './Command';

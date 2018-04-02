@@ -1,4 +1,4 @@
-import { Iterator } from '../Iterator';
+import { Iterator } from '../../ts/Iterator';
 
 export abstract class ByteDecoder<T>  extends Iterator {
   protected _output: T;

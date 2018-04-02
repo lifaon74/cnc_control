@@ -1,5 +1,5 @@
 import { NumberInfo } from '../../../structured-clone/NumberInfo';
-import { ByteStepEncoder } from '../byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../byte-step/ts/ByteStepEncoder';
 
 export class NumberEncoder extends ByteStepEncoder<number> {
 

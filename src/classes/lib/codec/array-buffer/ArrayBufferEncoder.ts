@@ -1,4 +1,4 @@
-import { ByteStepEncoder } from '../byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../byte-step/ts/ByteStepEncoder';
 import { SizeEncoder } from '../size/SizeEncoder';
 
 export class ArrayBufferEncoder extends ByteStepEncoder<ArrayBuffer> {

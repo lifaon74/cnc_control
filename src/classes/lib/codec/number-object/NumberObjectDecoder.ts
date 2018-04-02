@@ -1,4 +1,4 @@
-import { ByteDecoder } from '../byte/ByteDecoder';
+import { ByteDecoder } from '../byte/ts/ByteDecoder';
 import { NumberDecoder } from '../number/NumberDecoder';
 
 export class NumberObjectDecoder extends ByteDecoder<Number> {

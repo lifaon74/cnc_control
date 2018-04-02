@@ -1,4 +1,4 @@
-import { ByteStepEncoder } from '../byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../byte-step/ts/ByteStepEncoder';
 import { GetPointerFunction, Pointer } from '../types';
 import { SizeEncoder } from '../size/SizeEncoder';
 import { AnyEncoder } from '../any/AnyEncoder';

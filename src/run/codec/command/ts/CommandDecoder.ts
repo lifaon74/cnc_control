@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ByteStepDecoder';
+import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 import { Command, CommandCodes } from './Command';
 import { StepperMovementDecoder } from '../../stepper-movement/ts/StepperMovementDecoder';
 import { PWMDecoder } from '../../pwm/ts/PWMDecoder';

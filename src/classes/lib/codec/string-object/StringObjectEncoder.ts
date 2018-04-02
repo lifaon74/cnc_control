@@ -1,4 +1,4 @@
-import { ByteEncoder } from '../byte/ByteEncoder';
+import { ByteEncoder } from '../byte/ts/ByteEncoder';
 import { StringEncoder } from '../string/StringEncoder';
 
 export class StringObjectEncoder extends ByteEncoder<String> {

@@ -1,4 +1,4 @@
-import { ByteEncoder } from '../byte/ByteEncoder';
+import { ByteEncoder } from '../../byte/ts/ByteEncoder';
 
 export abstract class ByteStepEncoder<T> extends ByteEncoder<T> {
   protected _step: number;

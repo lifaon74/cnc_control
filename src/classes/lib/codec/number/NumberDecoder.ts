@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../byte-step/ByteStepDecoder';
+import { ByteStepDecoder } from '../byte-step/ts/ByteStepDecoder';
 import { NumberInfo } from '../../../structured-clone/NumberInfo';
 
 export class NumberDecoder extends ByteStepDecoder<number> {

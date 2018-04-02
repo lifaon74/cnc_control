@@ -1,4 +1,4 @@
-import { ByteEncoder } from '../byte/ByteEncoder';
+import { ByteEncoder } from '../byte/ts/ByteEncoder';
 import { NumberEncoder } from '../number/NumberEncoder';
 
 export class DateEncoder extends ByteEncoder<Date> {

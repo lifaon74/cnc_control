@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../byte-step/ByteStepDecoder';
+import { ByteStepDecoder } from '../byte-step/ts/ByteStepDecoder';
 import { StringDecoder } from '../string/StringDecoder';
 
 

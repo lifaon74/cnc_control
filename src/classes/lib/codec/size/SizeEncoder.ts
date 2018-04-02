@@ -1,4 +1,4 @@
-import { ByteEncoder } from '../byte/ByteEncoder';
+import { ByteEncoder } from '../byte/ts/ByteEncoder';
 
 export class SizeEncoder extends ByteEncoder<number> {
   next(): number {

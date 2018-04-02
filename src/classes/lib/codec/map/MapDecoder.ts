@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../byte-step/ByteStepDecoder';
+import { ByteStepDecoder } from '../byte-step/ts/ByteStepDecoder';
 import { GetPointerFunction, Pointer } from '../types';
 import { SizeDecoder } from '../size/SizeDecoder';
 import { AnyDecoder } from '../any/AnyDecoder';

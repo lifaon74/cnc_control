@@ -1,4 +1,4 @@
-import { ByteDecoder } from '../byte/ByteDecoder';
+import { ByteDecoder } from '../byte/ts/ByteDecoder';
 
 export class SizeDecoder extends ByteDecoder<number> {
   protected _offset: number;

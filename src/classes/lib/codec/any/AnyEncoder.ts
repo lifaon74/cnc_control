@@ -1,6 +1,6 @@
-import { ByteStepEncoder } from '../byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../byte-step/ts/ByteStepEncoder';
 import { DataCloneError, GetPointerFunction, Pointer } from '../types';
-import { ByteEncoder } from '../byte/ByteEncoder';
+import { ByteEncoder } from '../byte/ts/ByteEncoder';
 import { SizeEncoder } from '../size/SizeEncoder';
 import { Any } from './types';
 import { NumberEncoder } from '../number/NumberEncoder';

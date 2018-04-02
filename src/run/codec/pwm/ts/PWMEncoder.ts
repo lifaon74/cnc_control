@@ -1,4 +1,4 @@
-import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ByteStepEncoder';
+import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
 import { PWM } from './PWM';
 
 // TODO
