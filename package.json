@@ -8,6 +8,7 @@
     "bundle": "gulp bundle",
     "build": "gulp build",
     "debug-gulp": "node node_modules/gulp/bin/gulp.js",
+    "exec.c": "cd dist/esnext/run/c && node-gyp rebuild && node run.js",
     "build.c": "cd dist/esnext/run/c && node-gyp rebuild",
     "execute.c": "cd dist/esnext/run/c && node run.js",
     "install.raspi": "npm run rpio && npm run shared-buffer",

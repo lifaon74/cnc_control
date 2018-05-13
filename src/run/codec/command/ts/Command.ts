@@ -1,6 +1,7 @@
 export enum CommandCodes {
   PWM = 0x08,
-  MOVE = 0x09,
+  ACTIVE_STEPPERS = 0x09,
+  MOVE = 0x0A,
 }
 
 export class Command {

@@ -15,6 +15,10 @@ class PWM {
       this->period = period;
     }
 
+    ~PWM() {
+      std::cout << RED_TERMINAL("delete PWM\n");
+    }
+
     bool isActive(double time = GetTime()) {
       return std::fmod(time, this->period) < (this->value * this->period);
     }

@@ -20,7 +20,7 @@ class StepperMove {
     }
 
     void print() {
-      std::cout << "move #" << (uint32_t) this->pin << " : " << this->target << "\n";
+      std::cout << "StepperMove: pin (" << (uint32_t) this->pin << "), target (" << this->target << ")" << "\n";
     }
 };
 
@@ -40,7 +40,7 @@ class StepperMovement {
     }
 
     ~StepperMovement() {
-//      std::cout << "delete StepperMovement\n";
+      std::cout << RED_TERMINAL("delete StepperMovement\n");
       for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
         delete (*it);
       }
@@ -60,10 +60,10 @@ class StepperMovement {
     }
 
     void print() {
-      std::cout << "t: " << this->duration << ", ";
-      std::cout << "s: " << this->initialSpeed << ", ";
-      std::cout << "a: " << this->acceleration << ", ";
-      std::cout << "\n";
+      std::cout << "StepperMovement: duration ("
+      << this->duration << "), initialSpeed ("
+      << this->initialSpeed << "), acceleration ("
+      << this->acceleration << ")" << "\n";
       for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
         (*it)->print();
       }

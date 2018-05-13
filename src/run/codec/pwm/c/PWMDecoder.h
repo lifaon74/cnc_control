@@ -43,7 +43,7 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
             return;
           }
         case 3:
-          (*(this->_bytes))[this->_index++] = value;
+          this->_bytes->buffer[this->_index++] = value;
           this->_step = 2;
           break;
 
@@ -58,13 +58,14 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
             return;
           }
         case 5:
-          (*(this->_bytes))[this->_index++] = value;
+//          (*(this->_bytes))
+          this->_bytes->buffer[this->_index++] = value;
           this->_step = 4;
           break;
 
 
         default:
-          Nan::ThrowError("Unexpected step : " + this->_step);
+          THROW_ERROR("PWMDecoder - Unexpected step : " + std::to_string(this->_step));
           return;
       }
     }

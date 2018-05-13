@@ -15,7 +15,9 @@ class Iterator {
     bool _done;
 
     void throwIfDone() {
-//      if(this->done()) nullptr; // TODO throw
+      if(this->done()) {
+        THROW_ERROR("Call next on done Iterator");
+      };
     }
 };
 

@@ -16,6 +16,12 @@ export abstract class ByteStepDecoder<T> extends ByteDecoder<T> {
     this._next(value);
   }
 
+  reset(): void {
+    this._step = 0;
+    this._done = false;
+    this._init();
+  }
+
   protected _init(): void {
     this._next(0);
   }

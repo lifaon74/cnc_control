@@ -19,4 +19,7 @@ double GetTime() {
 //#_define THROW_ERROR(error) Nan::ThrowError(error);
 //Nan::ThrowError
 
+// https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
+#define RED_TERMINAL(message) (std::string("\033[;31m") + message + std::string("\033[0m"));
+
 #endif

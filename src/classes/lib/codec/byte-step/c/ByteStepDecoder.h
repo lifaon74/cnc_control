@@ -19,6 +19,12 @@ class ByteStepDecoder: public ByteDecoder<T> {
       this->_next(value);
     }
 
+    void reset() {
+      this->_step = 0;
+      this->_done = false;
+      this->_init();
+    }
+
   protected:
     uint32_t _step;
 

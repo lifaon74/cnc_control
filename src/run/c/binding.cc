@@ -27,7 +27,7 @@ print the type: std::cout << typeid(variable).name() << '\n';
 
 NAN_METHOD(start) {
   try {
-    textCommand();
+    test();
   } catch (const std::exception& e){
     std::cerr << e.what() << '\n';
     Nan::ThrowError(e.what());

@@ -69,7 +69,7 @@ Slave data:
 
 
 #### READ INPUTS 0x05
-Red the slave inputs.
+Read the slave inputs.
 Master data: NONE
 
 Slave data:
@@ -112,7 +112,16 @@ Master data:
 Slave data: NONE
 
 
-#### MOVE 0x09
+#### ACTIVE_STEPPERS 0x09
+Active steppers.
+
+Master data:
+- `ACTIVE_STATE` *(uint_8)*: inform which pins/axis should be activated.
+
+Slave data: NONE
+
+
+#### MOVE 0x0A
 Do a coordinated move. Slave answer when move is done.
     
 Master data:
@@ -124,3 +133,12 @@ Master data:
   - `DISTANCE` *(int_32)*: the distance in steps (positive or negative) of the move on axis `i`
 
 Slave data: NONE
+
+
+
+
+
+
+# TODO
+
+

@@ -1,6 +1,9 @@
 #ifndef STEPPER_MOVEMENT_DECODER_H
 #define STEPPER_MOVEMENT_DECODER_H
 
+#include "./StepperMovement.h"
+
+
 class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
   public:
     StepperMovementDecoder() {
@@ -18,7 +21,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
 
     void _next(uint8_t value) {
       while(true) {
-//      std::cout << "step: " << this->_step << "\n";
+//      std::cout << "StepperMovementDecoder - step: " << this->_step << "\n";
 
         switch(this->_step) {
           case 0: // init
@@ -109,8 +112,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
             break;
 
           default:
-//            throw std::logic_error("Unexpected step : " + this->_step);
-            Nan::ThrowError("Unexpected step : " + this->_step);
+            THROW_ERROR("StepperMovementDecoder - Unexpected step : " + std::to_string(this->_step));
             return;
         }
       }

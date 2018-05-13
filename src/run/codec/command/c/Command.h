@@ -10,7 +10,30 @@
 #define CMD_DEFINE ENDSTOPS 0x06
 #define CMD_HOME 0x07
 #define CMD_PWM 0x08
-#define CMD_MOVE 0x09
+#define CMD_ACTIVE_STEPPERS 0x09
+#define CMD_MOVE 0x0A
+
+#include "../../pwm/c/PWM.h"
+#include "../../stepper-movement/c/StepperMovement.h"
+
+// cast a $command (Command) to its type
+// $pre : code before the casting
+// $post : code after the casting
+// $command : the command (Command) to cast (actually, cast the $command->command)
+#define CAST_COMMAND($pre, $command, $post) \
+  switch ($command->code) { \
+    case CMD_PWM: \
+      $pre ((PWM *)($command->command)) $post; \
+      break; \
+    case CMD_MOVE: \
+      $pre ((StepperMovement *)($command->command)) $post; \
+      break; \
+    default: \
+      THROW_ERROR("Command - Unexpected command code : " + std::to_string($command->code)); \
+      return; \
+  }
+
+#define DELETE_COMMAND($command) CAST_COMMAND(delete , $command,);
 
 class Command {
   public:
@@ -25,8 +48,8 @@ class Command {
     }
 
     ~Command() {
-      //  TODO use switch to delete command properly
-      //  delete (this->command);
+      std::cout << RED_TERMINAL("delete Command\n");
+      DELETE_COMMAND(this);
     }
 
     void print() {
