@@ -1,5 +1,5 @@
-import { ByteEncoder } from './byte/ts/ByteEncoder';
-import { ByteDecoder } from './byte/ts/ByteDecoder';
+import { ByteEncoder } from '../byte/ts/ByteEncoder';
+import { ByteDecoder } from '../byte/ts/ByteDecoder';
 
 
 export function encode<T = any>(encoder: ByteEncoder<T>): number[] {
@@ -24,7 +24,8 @@ export function decode<T = any>(decoder: ByteDecoder<T>, buffer: number[]): T {
 
 export function codec<T>(encoder: ByteEncoder<T>, decoder: ByteDecoder<T>): T {
   const buffer: number[] = encode(encoder);
-  console.log(buffer);
+  // console.log(buffer);
+  console.log('[' + buffer.join(', ') + ']');
 
   const output: T = decode(decoder, buffer);
   console.log(output);

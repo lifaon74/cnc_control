@@ -1,4 +1,4 @@
-import { codec } from '../../../../classes/lib/codec/helpers';
+import { codec } from '../../../../classes/lib/codec/ts/helpers';
 import { PWM } from './PWM';
 import { PWMEncoder } from './PWMEncoder';
 import { PWMDecoder } from './PWMDecoder';

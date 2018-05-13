@@ -8,9 +8,11 @@
     "bundle": "gulp bundle",
     "build": "gulp build",
     "debug-gulp": "node node_modules/gulp/bin/gulp.js",
-    "raspi": "npm run rpio && npm run shared-buffer",
-    "rpio": "npm install rpio",
-    "shared-buffer": "npm install shared-buffer"
+    "build.c": "cd dist/esnext/run/c && node-gyp rebuild",
+    "execute.c": "cd dist/esnext/run/c && node run.js",
+    "install.raspi": "npm run rpio && npm run shared-buffer",
+    "install.rpio": "npm install rpio",
+    "install.shared-buffer": "npm install shared-buffer"
   },
   "author": "",
   "license": "ISC",

@@ -12,7 +12,7 @@ export class PWM {
   }
 
   isActive(time: number = GetTime()) {
-    return ((GetTime() % this.period) < (this.value * this.period));
+    return ((time % this.period) < (this.value * this.period));
   }
 
   getState(time?: number): number {

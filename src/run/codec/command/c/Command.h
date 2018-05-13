@@ -28,6 +28,10 @@ class Command {
       //  TODO use switch to delete command properly
       //  delete (this->command);
     }
+
+    void print() {
+      std::cout << "Command: id (" << (uint32_t) this->id << "), code (" << (uint32_t) this->code << ")" << "\n";
+    }
 };
 
 

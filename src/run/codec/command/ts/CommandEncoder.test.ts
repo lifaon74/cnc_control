@@ -1,4 +1,4 @@
-import { codec, encode } from '../../../../classes/lib/codec/helpers';
+import { codec, encode } from '../../../../classes/lib/codec/ts/helpers';
 import { CommandEncoder } from './CommandEncoder';
 import { StepperMove, StepperMovement } from '../../stepper-movement/ts/StepperMovement';
 import { Command, CommandCodes } from './Command';
@@ -15,8 +15,8 @@ async function test() {
   stepperMovement.moves.push(new StepperMove(2, 17));
   stepperMovement.moves.push(new StepperMove(3, -28));
 
-  // cmd = new Command(123, CommandCodes.MOVE, stepperMovement);
-  // codec(new CommandEncoder(cmd), new CommandDecoder());
+  cmd = new Command(123, CommandCodes.MOVE, stepperMovement);
+  codec(new CommandEncoder(cmd), new CommandDecoder());
 
 
   const pwm: PWM = new PWM(1, 0.5, 1.23);

@@ -202,12 +202,13 @@ export class GCODEHelper {
 
 
 
-  static moveTo(commands: GCODECommand[], x: number, y: number, z?: number, e?: number): GCODECommand[] {
+  static moveTo(commands: GCODECommand[], x: number, y: number, z?: number, e?: number, speed?: number): GCODECommand[] {
     const params: any = {};
     if(x !== void 0) params.x = x;
     if(y !== void 0) params.y = y;
     if(z !== void 0) params.z = z;
     if(e !== void 0) params.e = e;
+    if(speed !== void 0) params.f = speed;
     commands.push(new GCODECommand('G0', params));
     return commands;
   }
@@ -249,12 +250,43 @@ export class GCODEHelper {
   }
 
   static square(commands: GCODECommand[], x: number, y: number, side: number): GCODECommand[] {
-    const sideDemi: number = side / 2;
-    GCODEHelper.moveTo(commands, x - sideDemi, y - sideDemi);
-    GCODEHelper.moveTo(commands, x + sideDemi, y - sideDemi);
-    GCODEHelper.moveTo(commands, x + sideDemi, y + sideDemi);
-    GCODEHelper.moveTo(commands, x - sideDemi, y + sideDemi);
-    GCODEHelper.moveTo(commands, x - sideDemi, y - sideDemi);
+    const halfSide: number = side / 2;
+    GCODEHelper.moveTo(commands, x - halfSide, y - halfSide);
+    GCODEHelper.moveTo(commands, x + halfSide, y - halfSide);
+    GCODEHelper.moveTo(commands, x + halfSide, y + halfSide);
+    GCODEHelper.moveTo(commands, x - halfSide, y + halfSide);
+    GCODEHelper.moveTo(commands, x - halfSide, y - halfSide);
+    return commands;
+  }
+
+  static plentySquare(
+    commands: GCODECommand[],
+    x: number,
+    y: number,
+    z: number,
+    side: number,
+    toolRadius: number,
+    overlap: number = 0,
+  ): GCODECommand[] {
+    const halfSide: number = side / 2;
+    const halfSideMinusRadius: number = halfSide - toolRadius;
+    GCODEHelper.moveTo(commands, x - halfSideMinusRadius, y - halfSideMinusRadius);
+    GCODEHelper.moveTo(commands, 0, 0, z);
+
+    GCODEHelper.moveTo(commands, x + halfSideMinusRadius, y - halfSideMinusRadius);
+    GCODEHelper.moveTo(commands, x + halfSideMinusRadius, y + halfSideMinusRadius);
+    GCODEHelper.moveTo(commands, x - halfSideMinusRadius, y + halfSideMinusRadius);
+    GCODEHelper.moveTo(commands, x - halfSideMinusRadius, y - halfSideMinusRadius);
+
+    const step: number = toolRadius * 2 - overlap;
+    const start: number = y - halfSideMinusRadius + step;
+    const end: number = y + halfSideMinusRadius;
+    const _x: number =  y - halfSideMinusRadius + step - toolRadius;
+    let odd: boolean = false;
+    for (let _y = start; _y < end; _y += step) {
+      GCODEHelper.moveTo(commands, odd ? _x : -_x, _y);
+      odd = !odd;
+    }
     return commands;
   }
 
@@ -282,6 +314,14 @@ function createSquare(path: string): Promise<void> {
   });
 }
 
+function createPlentySquare(path: string): Promise<void> {
+  return GCodeWriterStream.toFile(path, (writer: Stream.Readable) => {
+    writer.push(GCODEHelper.plentySquare([], 0, 0, -2, 100, 3 / 2, 0.5));
+    writer.push(GCODEHelper.moveTo([], 0, 0, 2));
+    writer.push(null);
+  });
+}
+
 function createTower(path: string): Promise<void> {
   return GCodeWriterStream.toFile(path, (writer: Stream.Readable) => {
     const layerHeight: number = 10;
@@ -297,9 +337,11 @@ function createTower(path: string): Promise<void> {
   });
 }
 
+
 // createCircle('../assets/circle.gcode');
 // createSquare('../assets/square.gcode');
 // createTower('../assets/tower.gcode');
+createPlentySquare('../assets/plenty_square.gcode');
 
 // console.log(GCODEHelper.moveTo([], 10, 10)[0].toString());
 // console.log(GCODEHelper.arc([], 0, 0, 100, 1 / 4 * Math.PI, 3 / 4 * Math.PI, true, 100).map(a => a.toString()).join('\n'));

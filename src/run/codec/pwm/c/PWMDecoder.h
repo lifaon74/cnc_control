@@ -1,12 +1,14 @@
 #ifndef PWM_DECODER_H
 #define PWM_DECODER_H
 
+#include "./PWM.h"
+
 class PWMDecoder: public ByteStepDecoder<PWM> {
    public:
-      StepperMovementDecoder() {
+      PWMDecoder() {
       }
   
-      ~StepperMovementDecoder() {
+      ~PWMDecoder() {
         // delete this->_output;
       }
   
@@ -24,14 +26,15 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
           return;
 
         case 1: // pin
-          this->_output.pin = value;
+          this->_output->pin = value;
           this->_bytes = new Uint8Array(8);
+
           this->_index = 0;
           this->_step = 2;
 
         case 2: // value
-          if (this->_index >= this->_bytes.length) {
-            this->_output.value = ((double *) (this->_bytes->buffer))[0];
+          if (this->_index >= this->_bytes->length) {
+            this->_output->value = ((double *) (this->_bytes->buffer))[0];
             this->_index = 0;
             this->_step = 4;
             break;
@@ -40,14 +43,14 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
             return;
           }
         case 3:
-          this->_bytes[this->_index++] = value;
+          (*(this->_bytes))[this->_index++] = value;
           this->_step = 2;
           break;
 
         case 4: // period
-          if (this->_index >= this->_bytes.length) {
-            this->_output.period = ((double *) (this->_bytes->buffer))[0];
-            delete this->_bytes;
+          if (this->_index >= this->_bytes->length) {
+            this->_output->period = ((double *) (this->_bytes->buffer))[0];
+            delete (this->_bytes);
             this->_done = true;
             return;
           } else {
@@ -55,7 +58,7 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
             return;
           }
         case 5:
-          this->_bytes[this->_index++] = value;
+          (*(this->_bytes))[this->_index++] = value;
           this->_step = 4;
           break;
 
