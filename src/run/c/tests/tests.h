@@ -76,8 +76,16 @@ void testCommands() {
   }
 }
 
+void testCommandsExecutor() {
+  CommandsExecutor executor;
+  executor.start();
+}
+
+
+
 void test() {
-  testCommands();
+//  testCommands();
+  testCommandsExecutor();
 }
 
 

@@ -112,11 +112,11 @@ Master data:
 Slave data: NONE
 
 
-#### ACTIVE_STEPPERS 0x09
+#### ENABLE_STEPPERS 0x09
 Active steppers.
 
 Master data:
-- `ACTIVE_STATE` *(uint_8)*: inform which pins/axis should be activated.
+- `STATES` *(uint_8)*: inform which pins/axis should be activated.
 
 Slave data: NONE
 

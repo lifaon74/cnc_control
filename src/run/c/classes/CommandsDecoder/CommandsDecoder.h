@@ -1,7 +1,9 @@
 #ifndef COMMANDS_DECODER_H
 #define COMMANDS_DECODER_H
 
-class CommandsExecutor {
+#include "../../../codec/command/c/CommandDecoder.h"
+
+class CommandsDecoder {
   public:
     std::queue<Command *> immediateCommands;
     std::queue<Command *> commands;
@@ -11,7 +13,25 @@ class CommandsExecutor {
     }
 
     // decode commands from a data source (shared buffer)
-     void update() {}
+    uint16_t index = 0;
+
+    void update() { // TODO HARDCODED
+      if (this->commands.size() == 0) {
+        uint8_t data[] = {
+//          0, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63,
+          0, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255
+        };
+
+        data[0] = (this->index) & 0xff;
+        data[1] = (this->index >> 2) & 0xff;
+
+        Uint8Array buffer = Uint8Array(sizeof(data), data);
+
+        this->index = (this->index + 1) % 0xffff;
+
+        this->next(&buffer);
+      }
+    }
 
 
     void next(Uint8Array * data) {

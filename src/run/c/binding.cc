@@ -6,13 +6,14 @@
 #include <iostream>
 
 
-#define RASPBERRY
+//#define RASPBERRY
 
 #include "./snippets/snippets.h"
 #include "./classes/TypedArray/TypedArray.h"
 //#include "classes/SharedBufferStream.h"
 #include "../../classes/lib/codec/c/codec.h"
-#include "../codec/command/c/CommandDecoder.h"
+//#include "../codec/command/c/CommandDecoder.h"
+#include "./classes/CommandsExecutor/CommandsExecutor.h"
 //#include "../codec/pwm/c/PWMDecoder.h"
 //#include "classes/GPIOController.h"
 

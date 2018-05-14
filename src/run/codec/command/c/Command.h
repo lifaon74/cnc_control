@@ -10,7 +10,7 @@
 #define CMD_DEFINE ENDSTOPS 0x06
 #define CMD_HOME 0x07
 #define CMD_PWM 0x08
-#define CMD_ACTIVE_STEPPERS 0x09
+#define CMD_ENABLE_STEPPERS 0x09
 #define CMD_MOVE 0x0A
 
 #include "../../pwm/c/PWM.h"
