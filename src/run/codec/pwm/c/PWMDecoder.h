@@ -9,7 +9,7 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
       }
   
       ~PWMDecoder() {
-        // delete this->_output;
+        std::cout << RED_TERMINAL("delete PWMDecoder\n");
       }
   
   protected:

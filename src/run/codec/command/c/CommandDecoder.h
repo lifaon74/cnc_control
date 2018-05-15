@@ -32,7 +32,7 @@ class CommandDecoder : public ByteStepDecoder<Command> {
             return;
 
           case 2: // id high
-            this->_output->id |= value << 8;
+            this->_output->id |= ((uint16_t) value) << 8;
             this->_step = 3;
             return;
 

@@ -5,11 +5,11 @@
 
 class PWM {
   public:
-    double pin;
+    uint8_t pin;
     double value;
     double period; // in seconds
 
-    PWM(double pin = 0, double value = 0, double period = 1) {
+    PWM(uint8_t pin = 0, double value = 0, double period = 1) {
       this->pin = pin;
       this->value = value;
       this->period = period;

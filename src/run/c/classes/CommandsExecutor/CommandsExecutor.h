@@ -6,6 +6,52 @@
 #include "../SteppersController/SteppersController.h"
 
 
+#define PWM_REG 3
+#define PWM_CHANNELS 8
+
+class PWMController {
+  public:
+    GPIOController * gpioController;
+    PWM * pwm[PWM_CHANNELS];
+    bool autoFree;
+
+    PWMController(GPIOController * gpioController, bool autoFree = false) {
+      this->gpioController = gpioController;
+      this->autoFree = autoFree;
+
+      for(uint8_t i = 0; i < PWM_CHANNELS; i++) {
+        this->pwm[i] = nullptr;
+      }
+    }
+
+    ~PWMController() {
+      std::cout << RED_TERMINAL("delete PWMController\n");
+      if (this->autoFree) {
+        for(uint8_t i = 0; i < PWM_CHANNELS; i++) {
+          delete this->pwm[i];
+        }
+      }
+    }
+
+    void addPWM(PWM * pwm) {
+      if (this->autoFree) {
+        delete this->pwm[pwm->pin];
+      }
+      this->pwm[pwm->pin] = pwm;
+    }
+
+    void updatePWM(double time) {
+      uint8_t mask = 0b00000000;
+      for(uint8_t i = 0; i < PWM_CHANNELS; i++) {
+        if(this->pwm[i] != nullptr) {
+          mask |= (this->pwm[i]->getState(time) << i);
+        }
+      }
+      this->gpioController->outBuffer[PWM_REG] = mask;
+    }
+};
+
+
 
 #define GPIO_CS_PIN PINMAP_40[6] // pin #7
 #define GPIO_PL_PIN PINMAP_40[10] // pin #11
@@ -18,12 +64,14 @@ class CommandsExecutor {
 
     GPIOController * gpioController;
     SteppersController * steppersController;
+    PWMController * pwmController;
 
     Command * currentCommand;
 
     CommandsExecutor() {
       this->initGPIO();
       this->steppersController = new SteppersController(this->gpioController);
+      this->pwmController = new PWMController(this->gpioController);
 
       this->currentCommand = nullptr;
     }
@@ -32,6 +80,7 @@ class CommandsExecutor {
       std::cout << RED_TERMINAL("delete CommandsExecutor\n");
       delete (this->gpioController);
       delete (this->steppersController);
+      delete (this->pwmController);
     }
 
     void start() {
@@ -41,9 +90,8 @@ class CommandsExecutor {
         this->steppersController->updateMovement(time);
 
         if (this->currentCommand != nullptr) {
-          if ((this->currentCommand->id == CMD_MOVE) && (this->steppersController->currentMove == nullptr)) { // finished move
-            delete (this->currentCommand);
-            this->currentCommand = nullptr;
+          if ((this->currentCommand->code == CMD_MOVE) && (this->steppersController->currentMove == nullptr)) { // finished move
+            this->deleteCurrentCommand();
           }
         }
 
@@ -56,8 +104,16 @@ class CommandsExecutor {
             this->currentCommand = this->decoder.commands.front();
             this->decoder.commands.pop();
 
-            if (this->currentCommand->id == CMD_MOVE) {
-              this->steppersController->startMovement((StepperMovement *) (this->currentCommand->command), time);
+            switch (this->currentCommand->code) {
+              case CMD_PWM:
+                std::cout << "new pwm" << "\n";
+                this->pwmController->addPWM((PWM *) (this->currentCommand->command));
+                this->deleteCurrentCommand();
+                break;
+              case CMD_MOVE:
+                std::cout << "startMovement" << "\n";
+                this->steppersController->startMovement((StepperMovement *) (this->currentCommand->command), time);
+                break;
             }
           }
         }
@@ -66,6 +122,11 @@ class CommandsExecutor {
 
   //      std::cout << "loopTime : " << loopTime << "\n";
       }
+    }
+
+    void deleteCurrentCommand() {
+      delete (this->currentCommand);
+      this->currentCommand = nullptr;
     }
 
 

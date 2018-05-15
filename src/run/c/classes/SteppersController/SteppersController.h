@@ -29,7 +29,7 @@ class SteppersController {
 
     ~SteppersController() {
       std::cout << RED_TERMINAL("delete SteppersController\n");
-      delete (this->currentMove);
+      delete (this->currentMove); // INFO delete ?
     }
 
     void startMovement(StepperMovement * move, double time) {
@@ -40,7 +40,7 @@ class SteppersController {
     void updateMovement(double time) {
       if((time - this->stepTime) > STEPPERS_MIN_UPDATE_TIME) {
         this->stepTime = time;
-        this->updateMovement(time);
+        this->_updateMovement(time);
       }
     }
 
@@ -96,7 +96,7 @@ class SteppersController {
           this->stepping = true;
 
           if(finished) {
-            delete this->currentMove;
+//            delete this->currentMove;
             this->currentMove = nullptr;
             std::cout << "end a move\n";
             std::cout << this->missedSteps << ", " << this->runOutOfTime << "\n";

@@ -11,7 +11,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
     }
 
     ~StepperMovementDecoder() {
-      // delete this->_output;
+      std::cout << RED_TERMINAL("delete StepperMovementDecoder\n");
     }
 
   protected:
