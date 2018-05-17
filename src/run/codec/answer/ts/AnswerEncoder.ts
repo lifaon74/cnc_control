@@ -1,12 +1,11 @@
 import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
-import { StepperMovementEncoder } from '../../stepper-movement/ts/StepperMovementEncoder';
-import { Command, CommandCodes } from './Command';
-import { PWMEncoder } from '../../pwm/ts/PWMEncoder';
+import { Answer } from './Answer';
+import { CommandCodes } from '../../command/ts/Command';
 
-export class CommandEncoder extends ByteStepEncoder<Command> {
+export class AnswerEncoder extends ByteStepEncoder<Answer> {
   protected _encoder: ByteStepEncoder<any>;
 
-  constructor(input: Command) {
+  constructor(input: Answer) {
     super(input);
   }
 
@@ -24,13 +23,13 @@ export class CommandEncoder extends ByteStepEncoder<Command> {
 
         switch (this._input.code) {
           case CommandCodes.READ_INPUTS:
-            this._encoder = null;
+            this._encoder = null; // TODO
             break;
           case CommandCodes.PWM:
-            this._encoder = new PWMEncoder(this._input.command);
+            this._encoder = null;
             break;
           case CommandCodes.MOVE:
-            this._encoder = new StepperMovementEncoder(this._input.command);
+            this._encoder = null;
             break;
           default:
             throw new Error(`Invalid command type 0x${this._input.code.toString(16).padStart(2, '0')}`);
@@ -39,7 +38,7 @@ export class CommandEncoder extends ByteStepEncoder<Command> {
         this._step = 3;
         return this._input.code;
 
-      case 3: // command
+      case 3: // answer
         if((this._encoder === null) || this._encoder.done) {
           this._done = true;
           return 0;

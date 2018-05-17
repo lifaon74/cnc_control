@@ -1,9 +1,8 @@
 import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
-import { Command, CommandCodes } from './Command';
-import { StepperMovementDecoder } from '../../stepper-movement/ts/StepperMovementDecoder';
-import { PWMDecoder } from '../../pwm/ts/PWMDecoder';
+import { Answer } from './Answer';
+import { CommandCodes } from '../../command/ts/Command';
 
-export class CommandDecoder extends ByteStepDecoder<Command> {
+export class AnswerDecoder extends ByteStepDecoder<Answer> {
   protected _decoder: ByteStepDecoder<any>;
 
   constructor() {
@@ -14,7 +13,7 @@ export class CommandDecoder extends ByteStepDecoder<Command> {
     while(true) {
       switch(this._step) {
         case 0: // init
-          this._output = new Command();
+          this._output = new Answer();
           this._step = 1;
           return;
 
@@ -35,10 +34,10 @@ export class CommandDecoder extends ByteStepDecoder<Command> {
               this._decoder = null;
               break;
             case CommandCodes.PWM:
-              this._decoder = new PWMDecoder();
+              this._decoder = null;
               break;
             case CommandCodes.MOVE:
-              this._decoder = new StepperMovementDecoder();
+              this._decoder = null;
               break;
             default:
               throw new Error(`Invalid command type 0x${value.toString(16).padStart(2, '0')}`);
@@ -47,10 +46,10 @@ export class CommandDecoder extends ByteStepDecoder<Command> {
 
         case 4:
           if (this._decoder === null) {
-            this._output.command = null;
+            this._output.answer = null;
             this._done = true;
           } else if (this._decoder.done) {
-            this._output.command = this._decoder.output;
+            this._output.answer = this._decoder.output;
             this._done = true;
           } else {
             this._step = 5;

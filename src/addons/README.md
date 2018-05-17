@@ -15,9 +15,11 @@ then every answers have to following structure:
 
 - `CMD_ID` *(uint16)*: the id of the command which is finished.
 `0xffff` reserved, in case of special interruptions from slave (ex: material default, etc...)
-- `CMD_STATE` *(uint8)*: 
+- `CMD_CODE` *(uint8)*: the code of the command
+  - 0xff if command failed
+<!--- `CMD_STATE` *(uint8)*: 
   - 0x00: if command succeed
-  - != 0x00 if command failed
+  - != 0x00 if command failed -->
 - `...CMD_DATA`: extra data of the answer
 
 
@@ -73,7 +75,7 @@ Read the slave inputs.
 Master data: NONE
 
 Slave data:
-- `PIN_STATES` *(uint_16)*: the states of the input pins.
+- `PINS_STATE` *(uint_16)*: the state of the input pins.
 - `...ADC_VALUES` *(x8)*:
   - `ADC_VALUE` *(uint_16)*: the value of the ADC for channel `i`
 

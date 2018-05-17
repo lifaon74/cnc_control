@@ -39,9 +39,17 @@ class CommandDecoder : public ByteStepDecoder<Command> {
           case 3: // code
             this->_output->code = value;
             switch (value) {
+              case CMD_READ_INPUTS:
+                this->_decoder = nullptr;
+                break;
+
+//              case ENDSTOPS:
+//              case CMD_HOME:
+
               case CMD_PWM:
                 this->_decoder = new PWMDecoder();
                 break;
+//              case CMD_ENABLE_STEPPERS:
               case CMD_MOVE:
                 this->_decoder = new StepperMovementDecoder();
                 break;
@@ -52,7 +60,10 @@ class CommandDecoder : public ByteStepDecoder<Command> {
             this->_step = 4;
 
           case 4: // decode command
-            if((BYTE_STEP_DECODER_TYPE(this->_decoder))->done()) {
+            if (this->_decoder == nullptr) {
+              this->_output->command = null;
+              this->_done = true;
+            } else if((BYTE_STEP_DECODER_TYPE(this->_decoder))->done()) {
               this->_output->command = (BYTE_STEP_DECODER_TYPE(this->_decoder))->output();
               this->_done = true;
               delete (BYTE_STEP_DECODER_TYPE(this->_decoder));
