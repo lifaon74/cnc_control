@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
+import { ByteStepDecoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 import { PWM } from './PWM';
 
 export type TPrecision = 'float32' | 'float64';

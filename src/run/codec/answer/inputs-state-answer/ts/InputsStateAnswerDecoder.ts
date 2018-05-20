@@ -1,61 +1,44 @@
-import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
-import { PWM } from './PWM';
+import { InputsStateAnswer } from './InputsStateAnswer';
+import { ByteStepDecoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 
-export type TPrecision = 'float32' | 'float64';
-
-// TODO
-export class InputsStateAnswerDecoder extends ByteStepDecoder<PWM> {
-  public precision: TPrecision;
-
+export class InputsStateAnswerDecoder extends ByteStepDecoder<InputsStateAnswer> {
   protected _bytes: Uint8Array;
   protected _index: number;
 
-  constructor(precision: TPrecision = 'float64') {
+  constructor() {
     super();
-    this.precision = precision;
   }
 
   protected _next(value: number): void {
     while (true) {
       switch (this._step) {
         case 0: // init
-          this._output = new PWM();
+          this._output = new InputsStateAnswer();
           this._step = 1;
           return;
 
-        case 1: // pin
-          this._output.pin = value;
-          this._bytes = new Uint8Array(Float64Array.BYTES_PER_ELEMENT);
+        case 1: // pins state low
+          this._output.pinsState = value;
+          this._step = 2;
+          return;
+
+        case 2: // pins state high
+          this._output.pinsState |= value << 8;
+          this._bytes = new Uint8Array(this._output.adcValues.buffer); // assume LE platform
           this._index = 0;
-          this._step = 2;
+          this._step = 3;
 
-        case 2: // value
+        case 3: // period
           if (this._index >= this._bytes.length) {
-            this._output.value = new Float64Array(this._bytes.buffer)[0];
-            this._index = 0;
-            this._step = 4;
-            break;
-          } else {
-            this._step = 3;
-            return;
-          }
-        case 3:
-          this._bytes[this._index++] = value;
-          this._step = 2;
-          break;
-
-        case 4: // period
-          if (this._index >= this._bytes.length) {
-            this._output.period = new Float64Array(this._bytes.buffer)[0];
             this._done = true;
             return;
           } else {
-            this._step = 5;
+            this._step = 4;
             return;
           }
-        case 5:
+        case 4:
           this._bytes[this._index++] = value;
-          this._step = 4;
+          this._step = 3;
           break;
 
 

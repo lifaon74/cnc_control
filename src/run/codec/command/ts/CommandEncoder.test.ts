@@ -1,9 +1,24 @@
 import { codec, encode } from '../../../../classes/lib/codec/ts/helpers';
 import { CommandEncoder } from './CommandEncoder';
-import { StepperMove, StepperMovement } from '../../stepper-movement/ts/StepperMovement';
+import { StepperMove, StepperMovement } from '../../command/stepper-movement-command/ts/StepperMovement';
 import { Command, CommandCodes } from './Command';
 import { CommandDecoder } from './CommandDecoder';
-import { PWM } from '../../pwm/ts/PWM';
+import { Answer } from '../../answer/ts/Answer';
+import { AnswerEncoder } from '../../answer/ts/AnswerEncoder';
+import { InputsStateAnswer } from '../../answer/inputs-state-answer/ts/InputsStateAnswer';
+import { AnswerDecoder } from '../../answer/ts/AnswerDecoder';
+import { PWM } from '../pwm-command/ts/PWM';
+
+
+async function testAnswers() {
+  let ans: Answer;
+
+  const inputsState: InputsStateAnswer = new InputsStateAnswer(0b01100011 /* 99 */, new Uint16Array([0, 1, 2, 3, 4, 5, 6, 7]));
+
+  ans = new Answer(123, CommandCodes.READ_INPUTS, inputsState);
+  codec(new AnswerEncoder(ans), new AnswerDecoder());
+
+}
 
 async function test() {
   let cmd: Command;
@@ -28,4 +43,5 @@ async function test() {
   codec(new CommandEncoder(cmd), new CommandDecoder());
 }
 
-test();
+// test();
+testAnswers();

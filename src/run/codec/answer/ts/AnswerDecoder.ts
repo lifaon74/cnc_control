@@ -1,6 +1,7 @@
 import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 import { Answer } from './Answer';
 import { CommandCodes } from '../../command/ts/Command';
+import { InputsStateAnswerDecoder } from '../inputs-state-answer/ts/InputsStateAnswerDecoder';
 
 export class AnswerDecoder extends ByteStepDecoder<Answer> {
   protected _decoder: ByteStepDecoder<any>;
@@ -31,7 +32,7 @@ export class AnswerDecoder extends ByteStepDecoder<Answer> {
           this._output.code = value;
           switch (value) {
             case CommandCodes.READ_INPUTS:
-              this._decoder = null;
+              this._decoder = new InputsStateAnswerDecoder();
               break;
             case CommandCodes.PWM:
               this._decoder = null;

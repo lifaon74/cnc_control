@@ -14,7 +14,7 @@
 #include "../../classes/lib/codec/c/codec.h"
 //#include "../codec/command/c/CommandDecoder.h"
 #include "./classes/CommandsExecutor/CommandsExecutor.h"
-//#include "../codec/pwm/c/PWMDecoder.h"
+//#include "../codec/command/pwm-command/c/PWMDecoder.h"
 //#include "classes/GPIOController.h"
 
 #include "./tests/tests.h"

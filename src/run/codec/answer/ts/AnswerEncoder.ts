@@ -1,6 +1,8 @@
 import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
 import { Answer } from './Answer';
 import { CommandCodes } from '../../command/ts/Command';
+import { InputsStateAnswerEncoder } from '../inputs-state-answer/ts/InputsStateAnswerEncoder';
+import { InputsStateAnswer } from '../inputs-state-answer/ts/InputsStateAnswer';
 
 export class AnswerEncoder extends ByteStepEncoder<Answer> {
   protected _encoder: ByteStepEncoder<any>;
@@ -23,7 +25,7 @@ export class AnswerEncoder extends ByteStepEncoder<Answer> {
 
         switch (this._input.code) {
           case CommandCodes.READ_INPUTS:
-            this._encoder = null; // TODO
+            this._encoder = new InputsStateAnswerEncoder(this._input.answer as InputsStateAnswer);
             break;
           case CommandCodes.PWM:
             this._encoder = null;

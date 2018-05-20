@@ -2,8 +2,8 @@
 #define COMMAND_DECODER_H
 
 #include "./Command.h"
-#include "../../pwm/c/PWMDecoder.h"
-#include "../../stepper-movement/c/StepperMovementDecoder.h"
+#include "../pwm-command/c/PWMDecoder.h"
+#include "../stepper-movement-command/c/StepperMovementDecoder.h"
 
 #define BYTE_STEP_DECODER_TYPE (ByteStepDecoder<void>*)
 
@@ -61,7 +61,7 @@ class CommandDecoder : public ByteStepDecoder<Command> {
 
           case 4: // decode command
             if (this->_decoder == nullptr) {
-              this->_output->command = null;
+              this->_output->command = nullptr;
               this->_done = true;
             } else if((BYTE_STEP_DECODER_TYPE(this->_decoder))->done()) {
               this->_output->command = (BYTE_STEP_DECODER_TYPE(this->_decoder))->output();

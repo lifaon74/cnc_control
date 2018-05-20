@@ -13,8 +13,8 @@
 #define CMD_ENABLE_STEPPERS 0x09
 #define CMD_MOVE 0x0A
 
-#include "../../pwm/c/PWM.h"
-#include "../../stepper-movement/c/StepperMovement.h"
+#include "../pwm-command/c/PWM.h"
+#include "../stepper-movement-command/c/StepperMovement.h"
 
 // cast a $command (Command) to its type
 // $pre : code before the casting

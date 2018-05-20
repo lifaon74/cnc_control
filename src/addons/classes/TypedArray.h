@@ -23,6 +23,12 @@ class TypedArray {
       this->autoFree = false;
     }
 
+//    TypedArray(TypedArray<T> * array) {
+//      this->length = array->length;
+//      this->buffer = array->buffer;
+//      this->autoFree = false;
+//    }
+
     ~TypedArray() {
       if(this->autoFree) {
         delete [] (buffer);

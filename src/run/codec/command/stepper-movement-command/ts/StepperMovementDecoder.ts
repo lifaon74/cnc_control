@@ -1,4 +1,4 @@
-import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
+import { ByteStepDecoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 import { StepperMove, StepperMovement } from './StepperMovement';
 
 export class StepperMovementDecoder extends ByteStepDecoder<StepperMovement> {

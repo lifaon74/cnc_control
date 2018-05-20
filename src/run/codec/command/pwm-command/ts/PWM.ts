@@ -1,4 +1,4 @@
-import { GetTime } from '../../../../classes/misc';
+import { GetTime } from '../../../../../classes/misc';
 
 export class PWM {
   public value: number;

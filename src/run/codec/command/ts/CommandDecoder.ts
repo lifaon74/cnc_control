@@ -1,7 +1,7 @@
 import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
 import { Command, CommandCodes } from './Command';
-import { StepperMovementDecoder } from '../../stepper-movement/ts/StepperMovementDecoder';
-import { PWMDecoder } from '../../pwm/ts/PWMDecoder';
+import { StepperMovementDecoder } from '../../command/stepper-movement-command/ts/StepperMovementDecoder';
+import { PWMDecoder } from '../pwm-command/ts/PWMDecoder';
 
 export class CommandDecoder extends ByteStepDecoder<Command> {
   protected _decoder: ByteStepDecoder<any>;
