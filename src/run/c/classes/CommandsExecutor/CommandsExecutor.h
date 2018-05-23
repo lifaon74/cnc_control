@@ -12,7 +12,7 @@
 class PWMController {
   public:
     GPIOController * gpioController;
-    PWM * pwm[PWM_CHANNELS];
+    PWMCommand * pwm[PWM_CHANNELS];
     bool autoFree;
 
     PWMController(GPIOController * gpioController, bool autoFree = false) {
@@ -33,7 +33,7 @@ class PWMController {
       }
     }
 
-    void addPWM(PWM * pwm) {
+    void addPWM(PWMCommand * pwm) {
       if (this->autoFree) {
         delete this->pwm[pwm->pin];
       }
@@ -107,12 +107,12 @@ class CommandsExecutor {
             switch (this->currentCommand->code) {
               case CMD_PWM:
                 std::cout << "new pwm" << "\n";
-                this->pwmController->addPWM((PWM *) (this->currentCommand->command));
+                this->pwmController->addPWM((PWMCommand *) (this->currentCommand->command));
                 this->deleteCurrentCommand();
                 break;
               case CMD_MOVE:
                 std::cout << "startMovement" << "\n";
-                this->steppersController->startMovement((StepperMovement *) (this->currentCommand->command), time);
+                this->steppersController->startMovement((StepperMovementCommand *) (this->currentCommand->command), time);
                 break;
             }
           }

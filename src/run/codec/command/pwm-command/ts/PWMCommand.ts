@@ -1,6 +1,6 @@
 import { GetTime } from '../../../../../classes/misc';
 
-export class PWM {
+export class PWMCommand {
   public value: number;
   public pin: number;
   public period: number;

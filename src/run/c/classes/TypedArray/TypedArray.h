@@ -23,6 +23,13 @@ class TypedArray {
       this->autoFree = false;
     }
 
+    TypedArray(std::initializer_list<T> buffer) {
+      this->length = buffer.size();
+      this->buffer = new T[this->length];
+      memcpy(this->buffer, buffer.begin(), this->length);
+      this->autoFree = true;
+    }
+
     ~TypedArray() {
 //      std::cout << "free TypedArray" << "\n";
       if(this->autoFree) {
@@ -38,9 +45,42 @@ class TypedArray {
       return this->buffer[index];
     }
 
-    TypedArray * subarray(uint32_t start, uint32_t end) {
+    inline TypedArray * subarray() {
+      return new TypedArray(this->length, this->buffer);
+    }
+
+    inline TypedArray * subarray(int32_t start) {
+      int32_t length = (int32_t) this->length;
+      if (start < 0) {
+        start = ((start + length) < 0) ? 0 : (length + start);
+      } else if (start > length) {
+        start = length;
+      }
+
+      return new TypedArray(this->length - start, this->buffer + start);
+    }
+
+    inline TypedArray * subarray(int32_t start, int32_t end) {
+      int32_t length = (int32_t) this->length;
+      if (start < 0) {
+        start = ((start + length) < 0) ? 0 : (length + start);
+      } else if (start > length) {
+        start = length;
+      }
+
+      if (end < 0) {
+        end = ((end + length) < 0) ? 0 : (length + end);
+      } else if (end > length) {
+        end = length;
+      }
+
+      if (end < start) {
+        end = start;
+      }
+
       return new TypedArray(end - start, this->buffer + start);
     }
+
 
     void set(TypedArray * array, uint32_t offset = 0) {
       for(uint32_t i = 0; i < array->length; i++) {

@@ -1,12 +1,12 @@
 import { ByteStepEncoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
-import { PWM } from './PWM';
+import { PWMCommand } from './PWMCommand';
 
 // TODO
-export class PWMEncoder extends ByteStepEncoder<PWM> {
+export class PWMCommandEncoder extends ByteStepEncoder<PWMCommand> {
   protected _bytes: Uint8Array;
   protected _index: number;
 
-  constructor(input: PWM) {
+  constructor(input: PWMCommand) {
     super(input);
   }
 

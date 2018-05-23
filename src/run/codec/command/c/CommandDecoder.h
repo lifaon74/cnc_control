@@ -2,8 +2,8 @@
 #define COMMAND_DECODER_H
 
 #include "./Command.h"
-#include "../pwm-command/c/PWMDecoder.h"
-#include "../stepper-movement-command/c/StepperMovementDecoder.h"
+#include "../pwm-command/c/PWMCommandDecoder.h"
+#include "../stepper-movement-command/c/StepperMovementCommandDecoder.h"
 
 #define BYTE_STEP_DECODER_TYPE (ByteStepDecoder<void>*)
 
@@ -18,7 +18,7 @@ class CommandDecoder : public ByteStepDecoder<Command> {
 
     void _next(uint8_t value) {
       while(true) {
-//       std::cout << "Command - step: " << this->_step << '\n';
+//       std::cout << "CommandDecoder - step: " << this->_step << '\n';
 
         switch(this->_step) {
           case 0: // init
@@ -47,11 +47,11 @@ class CommandDecoder : public ByteStepDecoder<Command> {
 //              case CMD_HOME:
 
               case CMD_PWM:
-                this->_decoder = new PWMDecoder();
+                this->_decoder = new PWMCommandDecoder();
                 break;
 //              case CMD_ENABLE_STEPPERS:
               case CMD_MOVE:
-                this->_decoder = new StepperMovementDecoder();
+                this->_decoder = new StepperMovementCommandDecoder();
                 break;
               default:
                 THROW_ERROR("CommandDecoder - Unexpected command code : " + std::to_string(value));

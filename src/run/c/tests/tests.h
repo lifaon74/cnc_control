@@ -4,49 +4,60 @@
 #define TEST_MACRO($a, $b) $a $b
 
 template<typename T>
-T * decode(ByteDecoder<T> * decoder, uint8_t buffer[], size_t bufferLength) {
+//T * decode(ByteDecoder<T> * decoder, uint8_t buffer[], size_t bufferLength) {
+T * decode(ByteDecoder<T> * decoder, Uint8Array * buffer) {
   uint32_t i = 0;
   while(!decoder->done()) {
-    if(i >= bufferLength) {
+    if(i >= buffer->length) {
       throw std::logic_error("Buffer overflow");
     }
-    decoder->next(buffer[i]);
+    decoder->next((*buffer)[i]);
     i++;
   }
   return decoder->output();
 }
 
 
+template<typename T>
+Uint8Array * encode(ByteEncoder<T> * encoder, Uint8Array * buffer) {
+  uint32_t i = 0;
+  while(!encoder->done()) {
+    (*buffer)[i] = encoder->next();
+    i++;
+  }
+  return buffer->subarray(0, i);
+}
 
 
-void testPWM() {
+
+void testPWMCommand() {
   // cmd -> id: 123, code: 8 (pwm)
   // pwm -> pin: 1, value: 0.5, period: 1.23
-  uint8_t data[] = {123, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63};
+  Uint8Array buffer = Uint8Array({123, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63});
 
   CommandDecoder a;
-  Command * cmd = decode(&a, data, sizeof(data));
+  Command * cmd = decode(&a, &buffer);
   cmd->print();
-//  PWM * pwm = (PWM *) cmd->command;
+//  PWMCommand * pwm = (PWMCommand *) cmd->command;
 //  pwm->print();
   CAST_COMMAND(, cmd, ->print());
 
   delete cmd;
 }
 
-void testStepperMovement() {
+void testStepperMovementCommand() {
   // cmd -> id: 123, code: 8 (StepperMovement)
   // StepperMovement -> duration: 10, initialSpeed: 0.5, acceleration: 0.1
   // moves :
   //  - pin: 1, target: 17
   //  - pin: 3, target: -28
-  uint8_t data[] = {123, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255};
+  Uint8Array buffer = Uint8Array({123, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255});
 
   CommandDecoder a;
-  Command * cmd = decode(&a, data, sizeof(data));
+  Command * cmd = decode(&a, &buffer);
   cmd->print();
   CAST_COMMAND(, cmd, ->print());
-//  StepperMovement * movement = (StepperMovement *) cmd->command;
+//  StepperMovement * movement = (StepperMovementCommand *) cmd->command;
 //  movement->print();
 
   delete cmd;
@@ -54,17 +65,29 @@ void testStepperMovement() {
 
 
 void testCommand() {
-  testPWM();
-  testStepperMovement();
+  testPWMCommand();
+  testStepperMovementCommand();
 }
 
+
+void testAnswer() {
+  Uint8Array * buffer = new Uint8Array(1000000);
+
+  Answer * ans = new Answer(123, 8, 0);
+  AnswerEncoder a = AnswerEncoder(ans);
+  Uint8Array * _buffer = encode(&a, buffer);
+  _buffer->print();
+
+  delete buffer;
+  delete ans;
+}
+
+
 void testCommands() {
-  uint8_t data[] = {
+  Uint8Array buffer = Uint8Array({
     0, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63,
     1, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255
-  };
-
-  Uint8Array buffer = Uint8Array(sizeof(data), data);
+  });
 
   CommandsDecoder decoder;
   decoder.next(&buffer);
@@ -84,8 +107,10 @@ void testCommandsExecutor() {
 
 
 void test() {
+//  testCommand();
 //  testCommands();
-  testCommandsExecutor();
+  testAnswer();
+//  testCommandsExecutor();
 }
 
 

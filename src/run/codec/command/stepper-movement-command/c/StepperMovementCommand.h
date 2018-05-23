@@ -24,7 +24,7 @@ class StepperMove {
     }
 };
 
-class StepperMovement {
+class StepperMovementCommand {
   public:
     std::vector<StepperMove *> moves;
     double duration;
@@ -32,15 +32,15 @@ class StepperMovement {
     double acceleration;
     double initialTime;
 
-    StepperMovement() {
+    StepperMovementCommand() {
       this->duration = 0;
       this->initialSpeed = 0;
       this->acceleration = 0;
       this->initialTime = 0;
     }
 
-    ~StepperMovement() {
-      std::cout << RED_TERMINAL("delete StepperMovement\n");
+    ~StepperMovementCommand() {
+      std::cout << RED_TERMINAL("delete StepperMovementCommand\n");
       for(std::vector<StepperMove *>::iterator it = this->moves.begin(); it != this->moves.end(); ++it) {
         delete (*it);
       }
@@ -54,13 +54,13 @@ class StepperMovement {
       return pinMask;
     }
 
-    StepperMovement * start() {
+    StepperMovementCommand * start() {
       this->initialTime = GetTime();
       return this;
     }
 
     void print() {
-      std::cout << "StepperMovement: duration ("
+      std::cout << "StepperMovementCommand: duration ("
       << this->duration << "), initialSpeed ("
       << this->initialSpeed << "), acceleration ("
       << this->acceleration << ")" << "\n";

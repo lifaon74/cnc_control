@@ -4,7 +4,7 @@
 template<typename T>
 class ByteDecoder: public Iterator {
   public:
-    ByteDecoder() {
+    ByteDecoder(): Iterator() {
       this->_output = nullptr;
     }
 

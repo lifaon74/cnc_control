@@ -1,7 +1,8 @@
 import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
-import { StepperMovementEncoder } from '../../command/stepper-movement-command/ts/StepperMovementEncoder';
-import { Command, CommandCodes } from './Command';
-import { PWMEncoder } from '../pwm-command/ts/PWMEncoder';
+import { StepperMovementCommandEncoder } from '../../command/stepper-movement-command/ts/StepperMovementCommandEncoder';
+import { Command} from './Command';
+import { PWMCommandEncoder } from '../pwm-command/ts/PWMCommandEncoder';
+import { CommandCodes } from '../../codes/ts/codes';
 
 export class CommandEncoder extends ByteStepEncoder<Command> {
   protected _encoder: ByteStepEncoder<any>;
@@ -27,10 +28,10 @@ export class CommandEncoder extends ByteStepEncoder<Command> {
             this._encoder = null;
             break;
           case CommandCodes.PWM:
-            this._encoder = new PWMEncoder(this._input.command);
+            this._encoder = new PWMCommandEncoder(this._input.command);
             break;
           case CommandCodes.MOVE:
-            this._encoder = new StepperMovementEncoder(this._input.command);
+            this._encoder = new StepperMovementCommandEncoder(this._input.command);
             break;
           default:
             throw new Error(`Invalid command type 0x${this._input.code.toString(16).padStart(2, '0')}`);

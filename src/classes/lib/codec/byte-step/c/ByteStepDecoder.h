@@ -5,7 +5,8 @@ template<typename T>
 class ByteStepDecoder: public ByteDecoder<T> {
   public:
 
-    ByteStepDecoder(bool initCall = true) {
+    ByteStepDecoder(bool initCall = true)
+    : ByteDecoder<T>() {
       this->_step = 0;
       if (initCall) {
         this->_init();

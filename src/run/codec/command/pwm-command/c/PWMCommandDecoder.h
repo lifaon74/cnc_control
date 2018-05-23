@@ -1,15 +1,15 @@
-#ifndef PWM_DECODER_H
-#define PWM_DECODER_H
+#ifndef PWM_COMMAND_DECODER_H
+#define PWM_COMMAND_DECODER_H
 
-#include "./PWM.h"
+#include "./PWMCommand.h"
 
-class PWMDecoder: public ByteStepDecoder<PWM> {
+class PWMCommandDecoder: public ByteStepDecoder<PWMCommand> {
    public:
-      PWMDecoder() {
+      PWMCommandDecoder() {
       }
   
-      ~PWMDecoder() {
-        std::cout << RED_TERMINAL("delete PWMDecoder\n");
+      ~PWMCommandDecoder() {
+        std::cout << RED_TERMINAL("delete PWMCommandDecoder\n");
       }
   
   protected:
@@ -21,7 +21,7 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
     while (true) {
       switch (this->_step) {
         case 0: // init
-          this->_output = new PWM();
+          this->_output = new PWMCommand();
           this->_step = 1;
           return;
 
@@ -65,7 +65,7 @@ class PWMDecoder: public ByteStepDecoder<PWM> {
 
 
         default:
-          THROW_ERROR("PWMDecoder - Unexpected step : " + std::to_string(this->_step));
+          THROW_ERROR("PWMCommandDecoder - Unexpected step : " + std::to_string(this->_step));
           return;
       }
     }

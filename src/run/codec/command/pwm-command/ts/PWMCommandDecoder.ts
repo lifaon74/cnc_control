@@ -1,9 +1,9 @@
 import { ByteStepDecoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
-import { PWM } from './PWM';
+import { PWMCommand } from './PWMCommand';
 
 export type TPrecision = 'float32' | 'float64';
 
-export class PWMDecoder extends ByteStepDecoder<PWM> {
+export class PWMCommandDecoder extends ByteStepDecoder<PWMCommand> {
   public precision: TPrecision;
 
   protected _bytes: Uint8Array;
@@ -18,7 +18,7 @@ export class PWMDecoder extends ByteStepDecoder<PWM> {
     while (true) {
       switch (this._step) {
         case 0: // init
-          this._output = new PWM();
+          this._output = new PWMCommand();
           this._step = 1;
           return;
 

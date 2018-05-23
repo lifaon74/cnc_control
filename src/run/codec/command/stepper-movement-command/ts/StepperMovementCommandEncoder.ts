@@ -1,12 +1,12 @@
 import { ByteStepEncoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
-import { StepperMovement } from './StepperMovement';
+import { StepperMovementCommand } from './StepperMovementCommand';
 
-export class StepperMovementEncoder extends ByteStepEncoder<StepperMovement> {
+export class StepperMovementCommandEncoder extends ByteStepEncoder<StepperMovementCommand> {
   protected _bytes: Uint8Array;
   protected _index: number;
   protected _moveIndex: number;
 
-  constructor(input: StepperMovement) {
+  constructor(input: StepperMovementCommand) {
     super(input);
   }
 

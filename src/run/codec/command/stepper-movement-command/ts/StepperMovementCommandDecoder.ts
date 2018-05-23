@@ -1,7 +1,7 @@
 import { ByteStepDecoder } from '../../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
-import { StepperMove, StepperMovement } from './StepperMovement';
+import { StepperMove, StepperMovementCommand } from './StepperMovementCommand';
 
-export class StepperMovementDecoder extends ByteStepDecoder<StepperMovement> {
+export class StepperMovementCommandDecoder extends ByteStepDecoder<StepperMovementCommand> {
   protected _bytes: Uint8Array;
   protected _index: number;
   protected _moveIndex: number;
@@ -14,7 +14,7 @@ export class StepperMovementDecoder extends ByteStepDecoder<StepperMovement> {
     while(true) {
       switch(this._step) {
         case 0: // init
-          this._output = new StepperMovement();
+          this._output = new StepperMovementCommand();
           this._step = 1;
           return;
 

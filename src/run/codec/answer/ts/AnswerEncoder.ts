@@ -1,6 +1,6 @@
 import { ByteStepEncoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepEncoder';
 import { Answer } from './Answer';
-import { CommandCodes } from '../../command/ts/Command';
+import { CommandCodes } from '../../codes/ts/codes';
 import { InputsStateAnswerEncoder } from '../inputs-state-answer/ts/InputsStateAnswerEncoder';
 import { InputsStateAnswer } from '../inputs-state-answer/ts/InputsStateAnswer';
 
@@ -22,6 +22,10 @@ export class AnswerEncoder extends ByteStepEncoder<Answer> {
         return (this._input.id >> 8) & 0xff;
 
       case 2: // code
+        this._step = 3;
+        return this._input.code;
+
+      case 3: // state
 
         switch (this._input.code) {
           case CommandCodes.READ_INPUTS:
@@ -37,10 +41,10 @@ export class AnswerEncoder extends ByteStepEncoder<Answer> {
             throw new Error(`Invalid command type 0x${this._input.code.toString(16).padStart(2, '0')}`);
         }
 
-        this._step = 3;
-        return this._input.code;
+        this._step = 4;
+        return this._input.state;
 
-      case 3: // answer
+      case 4: // answer
         if((this._encoder === null) || this._encoder.done) {
           this._done = true;
           return 0;

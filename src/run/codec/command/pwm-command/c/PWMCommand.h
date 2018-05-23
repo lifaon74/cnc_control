@@ -1,22 +1,22 @@
-#ifndef PWM_H
-#define PWM_H
+#ifndef PWM_COMMAND_H
+#define PWM_COMMAND_H
 
 //#include "../../../c/snippets/snippets.h"
 
-class PWM {
+class PWMCommand {
   public:
     uint8_t pin;
     double value;
     double period; // in seconds
 
-    PWM(uint8_t pin = 0, double value = 0, double period = 1) {
+    PWMCommand(uint8_t pin = 0, double value = 0, double period = 1) {
       this->pin = pin;
       this->value = value;
       this->period = period;
     }
 
-    ~PWM() {
-      std::cout << RED_TERMINAL("delete PWM\n");
+    ~PWMCommand() {
+      std::cout << RED_TERMINAL("delete PWMCommand\n");
     }
 
     bool isActive(double time = GetTime()) {
@@ -28,7 +28,7 @@ class PWM {
     }
 
     void print() {
-      std::cout << "PWM: pin (" << (uint32_t) this->pin << "), value (" << this->value << "), period (" << this->period << ")" << "\n";
+      std::cout << "PWMCommand: pin (" << (uint32_t) this->pin << "), value (" << this->value << "), period (" << this->period << ")" << "\n";
     }
 };
 

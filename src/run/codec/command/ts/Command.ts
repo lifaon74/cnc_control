@@ -1,19 +1,4 @@
-export enum CommandCodes {
-  STOP = 0x00,
-  PAUSE = 0x01,
-  RESUME = 0x02,
-  SET_PRECISION = 0x03,
-  GET_CAPABILITIES = 0x04,
-  READ_INPUTS = 0x05,
-  DEFINE_ENDSTOPS = 0x06,
-  HOME = 0x07,
-  PWM = 0x08,
-  ENABLE_STEPPERS = 0x09,
-  MOVE = 0x0a,
 
-
-  ERROR = 0xff,
-}
 
 export class Command {
   public id: number;
@@ -26,4 +11,7 @@ export class Command {
     this.command = command;
   }
 
+  immediate(): boolean {
+    return (this.id & 0x8000) !== 0; // or 0b1000000000000000
+  }
 }

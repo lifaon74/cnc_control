@@ -1,7 +1,8 @@
 import { ByteStepDecoder } from '../../../../classes/lib/codec/byte-step/ts/ByteStepDecoder';
-import { Command, CommandCodes } from './Command';
-import { StepperMovementDecoder } from '../../command/stepper-movement-command/ts/StepperMovementDecoder';
-import { PWMDecoder } from '../pwm-command/ts/PWMDecoder';
+import { Command} from './Command';
+import { StepperMovementCommandDecoder } from '../../command/stepper-movement-command/ts/StepperMovementCommandDecoder';
+import { PWMCommandDecoder } from '../pwm-command/ts/PWMCommandDecoder';
+import { CommandCodes } from '../../codes/ts/codes';
 
 export class CommandDecoder extends ByteStepDecoder<Command> {
   protected _decoder: ByteStepDecoder<any>;
@@ -35,10 +36,10 @@ export class CommandDecoder extends ByteStepDecoder<Command> {
               this._decoder = null;
               break;
             case CommandCodes.PWM:
-              this._decoder = new PWMDecoder();
+              this._decoder = new PWMCommandDecoder();
               break;
             case CommandCodes.MOVE:
-              this._decoder = new StepperMovementDecoder();
+              this._decoder = new StepperMovementCommandDecoder();
               break;
             default:
               throw new Error(`Invalid command type 0x${value.toString(16).padStart(2, '0')}`);

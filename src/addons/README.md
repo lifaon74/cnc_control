@@ -5,7 +5,8 @@
 Every commands have the following structure:
 
 - `CMD_ID` *(uint16)*: the id of the command (used to identify it in the queue).
-`0xffff` reserved, to know if command should be executed immediatly or put in queue
+First bit used to define if the command should be executed immediatly or not.
+<!-- `0xffff` reserved, to know if command should be executed immediatly or put in queue -->
 - `CMD_CODE` *(uint8)*: the code of the command (what should be done)
 - `...CMD_DATA`: extra data of the command
 
@@ -14,12 +15,13 @@ First byte sent by slave is always the protocol version (ex: `0x01`),
 then every answers have to following structure:
 
 - `CMD_ID` *(uint16)*: the id of the command which is finished.
-`0xffff` reserved, in case of special interruptions from slave (ex: material default, etc...)
+<!-- `0xffff` reserved, in case of special interruptions from slave (ex: material default, etc...) -->
 - `CMD_CODE` *(uint8)*: the code of the command
-  - 0xff if command failed
 <!--- `CMD_STATE` *(uint8)*: 
   - 0x00: if command succeed
   - != 0x00 if command failed -->
+- `CMD_STATE` *(uint8)*:
+  - ERROR if different than 0x00
 - `...CMD_DATA`: extra data of the answer
 
 

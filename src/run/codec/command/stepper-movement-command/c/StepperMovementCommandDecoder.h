@@ -1,17 +1,17 @@
 #ifndef STEPPER_MOVEMENT_DECODER_H
 #define STEPPER_MOVEMENT_DECODER_H
 
-#include "./StepperMovement.h"
+#include "./StepperMovementCommand.h"
 
 
-class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
+class StepperMovementCommandDecoder: public ByteStepDecoder<StepperMovementCommand> {
   public:
-    StepperMovementDecoder() {
+    StepperMovementCommandDecoder() {
 
     }
 
-    ~StepperMovementDecoder() {
-      std::cout << RED_TERMINAL("delete StepperMovementDecoder\n");
+    ~StepperMovementCommandDecoder() {
+      std::cout << RED_TERMINAL("delete StepperMovementCommandDecoder\n");
     }
 
   protected:
@@ -21,11 +21,11 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
 
     void _next(uint8_t value) {
       while(true) {
-//      std::cout << "StepperMovementDecoder - step: " << this->_step << "\n";
+//      std::cout << "StepperMovementCommandDecoder - step: " << this->_step << "\n";
 
         switch(this->_step) {
           case 0: // init
-            this->_output = new StepperMovement();
+            this->_output = new StepperMovementCommand();
             this->_step = 1;
             return;
 
@@ -112,7 +112,7 @@ class StepperMovementDecoder: public ByteStepDecoder<StepperMovement> {
             break;
 
           default:
-            THROW_ERROR("StepperMovementDecoder - Unexpected step : " + std::to_string(this->_step));
+            THROW_ERROR("StepperMovementCommandDecoder - Unexpected step : " + std::to_string(this->_step));
             return;
         }
       }

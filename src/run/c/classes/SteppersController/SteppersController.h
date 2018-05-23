@@ -13,7 +13,7 @@ class SteppersController {
   public:
     GPIOController * gpioController;
 
-    StepperMovement * currentMove;
+    StepperMovementCommand * currentMove;
     bool stepping;
     double stepTime;
 
@@ -32,7 +32,7 @@ class SteppersController {
       delete (this->currentMove); // INFO delete ?
     }
 
-    void startMovement(StepperMovement * move, double time) {
+    void startMovement(StepperMovementCommand * move, double time) {
        this->currentMove = move;
        this->currentMove->initialTime = time;
     }

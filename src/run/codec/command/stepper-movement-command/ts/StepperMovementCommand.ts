@@ -14,7 +14,7 @@ export class StepperMove {
   }
 }
 
-export class StepperMovement {
+export class StepperMovementCommand {
 
   public moves: StepperMove[];
   public duration: number;

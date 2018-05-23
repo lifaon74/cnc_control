@@ -2,6 +2,7 @@
 #define COMMANDS_DECODER_H
 
 #include "../../../codec/command/c/CommandDecoder.h"
+#include "../../../codec/answer/c/AnswerEncoder.h"
 
 class CommandsDecoder {
   public:
@@ -70,6 +71,7 @@ class CommandsDecoder {
 
   protected:
     CommandDecoder _decoder;
+//    AnswerDecoder _encoder;
     uint16_t _commandIndex; // the expected command index
 
     void _checkIfDecoderIsDone() {
