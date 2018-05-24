@@ -1,23 +1,19 @@
-#ifndef ANSWER_DECODER_H
-#define ANSWER_DECODER_H
+#ifndef INPUT_STATE_ANSWER_DECODER_H
+#define INPUT_STATE_ANSWER_DECODER_H
 
-#include "./Answer.h"
-//#include "../pwm-command/c/PWMCommandDecoder.h"
-//#include "../stepper-movement-command/c/StepperMovementCommandDecoder.h"
+#include "./InputsStateAnswer.h"
 
-#define BYTE_STEP_ENCODER_TYPE (ByteStepEncoder<void>*)
-
-
-class AnswerEncoder : public ByteStepEncoder<Answer> {
+// TODO
+class InputsStateAnswerEncoder : public ByteStepEncoder<InputsStateAnswer> {
   public:
-    AnswerEncoder(Answer * input): ByteStepEncoder<Answer>(input) {
+    InputsStateAnswerEncoder(InputsStateAnswer * input): ByteStepEncoder<InputsStateAnswer>(input) {
     }
 
   protected:
     void * _encoder; // ByteStepEncoder<T>
 
     uint8_t _next() {
-//     std::cout << "AnswerEncoder - step: " << this->_step << '\n';
+//     std::cout << "InputsStateAnswerEncoder - step: " << this->_step << '\n';
 
       switch(this->_step) {
         case 0: // id low
