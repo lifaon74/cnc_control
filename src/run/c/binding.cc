@@ -1,9 +1,12 @@
+#define NOMINMAX
+
 #include <nan.h>
 
 #include <cmath>
 #include <ctime>
 #include <queue>
 #include <iostream>
+#include <algorithm>
 
 
 //#define RASPBERRY

@@ -2,8 +2,7 @@
 #define ANSWER_H
 
 #include "../../codes/c/codes.h"
-//#include "../pwm-command/c/PWMCommand.h"
-//#include "../stepper-movement-command/c/StepperMovementCommand.h"
+#include "../inputs-state-answer/c/InputsStateAnswerEncoder.h"
 
 // cast a $command (Command) to its type
 // $pre : code before the casting
@@ -11,22 +10,14 @@
 // $command : the command (Command) to cast (actually, cast the $command->command)
 #define CAST_ANSWER($pre, $answer, $post) \
   switch ($answer->code) { \
-    case CMD_PWM: \
+    case CMD_READ_INPUTS: \
+      $pre ((InputsStateAnswer *)($answer->answer)) $post; \
       break; \
     default: \
       THROW_ERROR("Answer - Unexpected $answer code : " + std::to_string($answer->code)); \
       return; \
   }
 
-
-/*
-case CMD_PWM: \
-  $pre ((PWMCommand *)($answer->$answer)) $post; \
-  break; \
-case CMD_MOVE: \
-  $pre ((StepperMovementCommand *)($answer->$answer)) $post; \
-  break; \
-  */
 
 #define DELETE_ANSWER($command) CAST_ANSWER(delete , $command,);
 

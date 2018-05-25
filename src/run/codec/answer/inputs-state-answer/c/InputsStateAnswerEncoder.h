@@ -3,61 +3,40 @@
 
 #include "./InputsStateAnswer.h"
 
-// TODO
 class InputsStateAnswerEncoder : public ByteStepEncoder<InputsStateAnswer> {
   public:
     InputsStateAnswerEncoder(InputsStateAnswer * input): ByteStepEncoder<InputsStateAnswer>(input) {
     }
 
   protected:
-    void * _encoder; // ByteStepEncoder<T>
+    Uint8Array * _bytes;
+    uint32_t _index;
 
     uint8_t _next() {
 //     std::cout << "InputsStateAnswerEncoder - step: " << this->_step << '\n';
 
       switch(this->_step) {
-        case 0: // id low
+        case 0: // pins state low
           this->_step = 1;
-          return this->_input->id & 0xff;
+          return this->_input->pinsState & 0xff;
 
-        case 1: // id high
+        case 1: // pins state high
+          this->_bytes = new Uint8Array((uint8_t *) (this->_input->adcValues->buffer), this->_input->adcValues->length * this->_input->adcValues->BYTES_PER_ELEMENT());
+          this->_index = 0;
           this->_step = 2;
-          return (this->_input->id >> 8) & 0xff;
+          return (this->_input->pinsState >> 8) & 0xff;
 
-        case 2: // code
-          this->_step = 3;
-          return this->_input->code;
-
-        case 3: // state
-
-          switch (this->_input->code) {
-            case CMD_READ_INPUTS:
-            //            this->_encoder = new InputsStateAnswerEncoder(this->_input.answer as InputsStateAnswer);
-              break;
-            case CMD_PWM:
-              this->_encoder = nullptr;
-              break;
-            case CMD_MOVE:
-              this->_encoder = nullptr;
-              break;
-            default:
-              THROW_ERROR("AnswerEncoder - Unexpected command code : " + std::to_string(this->_input->code));
-              return 0;
-          }
-
-          this->_step = 4;
-          return this->_input->state;
-
-        case 4: // answer
-          if((this->_encoder == nullptr) || (BYTE_STEP_ENCODER_TYPE(this->_encoder))->done()) {
+        case 2: // adc values
+          if (this->_index >= this->_bytes->length) {
+            delete this->_bytes;
             this->_done = true;
             return 0;
           } else {
-            return (BYTE_STEP_ENCODER_TYPE(this->_encoder))->next();
+            return this->_bytes->buffer[this->_index++];
           }
 
         default:
-          THROW_ERROR("AnswerEncoder - Unexpected step : " + std::to_string(this->_step));
+          THROW_ERROR("InputsStateAnswerEncoder - Unexpected step : " + std::to_string(this->_step));
           return 0;
       }
     }

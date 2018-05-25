@@ -6,8 +6,8 @@ class InputsStateAnswer {
     uint16_t pinsState;
     Uint16Array * adcValues;
 
-    InputsStateAnswer(uint16_t id = 0, Uint16Array * adcValues) {
-      this->pinsState = id;
+    InputsStateAnswer(uint16_t pinsState = 0, Uint16Array * adcValues = new Uint16Array(8)) {
+      this->pinsState = pinsState;
       this->adcValues = adcValues;
     }
 
@@ -16,7 +16,7 @@ class InputsStateAnswer {
     }
 
     void print() {
-      std::cout << "InputsStateAnswer: pinsState (" << (uint32_t) this->id << "), adc values : ";
+      std::cout << "InputsStateAnswer: pinsState (" << (uint32_t) this->pinsState << "), adc values : ";
       this->adcValues->print();
     }
 };

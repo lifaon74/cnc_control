@@ -2,88 +2,96 @@
 #define TYPED_ARRAY_H
 
 #include <iostream>
+#include <algorithm>
 
 
 template<typename T>
 class TypedArray {
   public:
+    static uint32_t BYTES_PER_ELEMENT() {
+      return sizeof(T);
+    }
+
+
     T * buffer;
     uint32_t length;
     bool autoFree;
 
     TypedArray(uint32_t length) {
       this->length = length;
-      this->buffer = new T[this->length];
-      this->autoFree = true;
+      this->_createBuffer();
     }
 
-    TypedArray(uint32_t length, T * buffer) {
+    TypedArray(T * buffer, uint32_t length) {
       this->length = length;
       this->buffer = buffer;
       this->autoFree = false;
     }
 
-    TypedArray(std::initializer_list<T> buffer) {
-      this->length = buffer.size();
-      this->buffer = new T[this->length];
-      memcpy(this->buffer, buffer.begin(), this->length);
-      this->autoFree = true;
+    TypedArray(std::initializer_list<T> array) {
+      this->length = array.size();
+      this->_createBuffer();
+      std::copy(array.begin(), array.end(), this->buffer);
     }
 
+    template<typename U>
+    TypedArray(TypedArray<U> * array) {
+      this->length = array->length;
+      this->_createBuffer();
+      this->set(array);
+    }
+
+
     ~TypedArray() {
-//      std::cout << "free TypedArray" << "\n";
+//      std::cout << RED_TERMINAL("delete TypedArray\n");
       if(this->autoFree) {
         delete [] (buffer);
       }
     }
 
-//    T operator [] (const uint32_t index) const {
-//      return this->buffer[index];
-//    }
+    uint32_t byteLength() {
+      return this->length * this->BYTES_PER_ELEMENT();
+    }
 
     T& operator[] (const uint32_t index) {
       return this->buffer[index];
     }
 
-    inline TypedArray * subarray() {
-      return new TypedArray(this->length, this->buffer);
+
+    TypedArray * subarray() {
+      return new TypedArray(this->buffer, this->length);
     }
 
-    inline TypedArray * subarray(int32_t start) {
-      int32_t length = (int32_t) this->length;
-      if (start < 0) {
-        start = ((start + length) < 0) ? 0 : (length + start);
-      } else if (start > length) {
-        start = length;
-      }
+    TypedArray * subarray(int32_t start) {
+      start = this->_clampIndex(start);
 
-      return new TypedArray(this->length - start, this->buffer + start);
+      return new TypedArray(this->buffer + start, this->length - start);
     }
 
-    inline TypedArray * subarray(int32_t start, int32_t end) {
-      int32_t length = (int32_t) this->length;
-      if (start < 0) {
-        start = ((start + length) < 0) ? 0 : (length + start);
-      } else if (start > length) {
-        start = length;
-      }
-
-      if (end < 0) {
-        end = ((end + length) < 0) ? 0 : (length + end);
-      } else if (end > length) {
-        end = length;
-      }
+    TypedArray * subarray(int32_t start, int32_t end) {
+      start = this->_clampIndex(start);
+      end = this->_clampIndex(end);
 
       if (end < start) {
         end = start;
       }
 
-      return new TypedArray(end - start, this->buffer + start);
+      return new TypedArray(this->buffer + start, end - start);
     }
 
 
-    void set(TypedArray * array, uint32_t offset = 0) {
-      for(uint32_t i = 0; i < array->length; i++) {
+    void set(std::initializer_list<T> array, uint32_t offset = 0) {
+      uint32_t end = std::min(array.size(), this->length - offset);
+      T * _array = array.begin();
+      for(uint32_t i = 0; i < end; i++) {
+        this->buffer[i + offset] = _array[i];
+      }
+    }
+
+    template<typename U>
+    void set(TypedArray<U> * array, uint32_t offset = 0) {
+      uint32_t end = std::min(array->length, this->length - offset);
+      for(uint32_t i = 0; i < end; i++) {
         this->buffer[i + offset] = array->buffer[i];
       }
     }
@@ -99,7 +107,24 @@ class TypedArray {
       }
       std::cout << "\n";
     }
+
+  protected:
+    void _createBuffer() {
+       this->buffer = new T[this->length];
+       this->autoFree = true;
+    }
+
+    int32_t _clampIndex(int32_t index) {
+      int32_t length = (int32_t) this->length;
+      if (index < 0) {
+        return ((index + length) < 0) ? 0 : (length + index);
+      } else if (index > length) {
+        return length;
+      }
+    }
+
 };
+
 
 #define Uint8Array TypedArray<uint8_t>
 #define Int8Array TypedArray<int8_t>

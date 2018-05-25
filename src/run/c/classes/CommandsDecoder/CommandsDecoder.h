@@ -31,7 +31,7 @@ class CommandsDecoder {
       data[0] = (this->index) & 0xff;
       data[1] = (this->index >> 8) & 0xff;
 
-      Uint8Array buffer = Uint8Array(sizeof(data), data);
+      Uint8Array buffer = Uint8Array(data, sizeof(data));
 
       this->index = (this->index + 1) % 0xffff;
 //        std::cout << "index" << this->index << "\n";
@@ -47,7 +47,7 @@ class CommandsDecoder {
       data[0] = (this->index) & 0xff;
       data[1] = (this->index >> 8) & 0xff;
 
-      Uint8Array buffer = Uint8Array(sizeof(data), data);
+      Uint8Array buffer = Uint8Array(data, sizeof(data));
 
       this->index = (this->index + 1) % 0xffff;
 //        std::cout << "index" << this->index << "\n";

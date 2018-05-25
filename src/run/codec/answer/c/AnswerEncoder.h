@@ -2,8 +2,8 @@
 #define ANSWER_DECODER_H
 
 #include "./Answer.h"
-//#include "../pwm-command/c/PWMCommandDecoder.h"
-//#include "../stepper-movement-command/c/StepperMovementCommandDecoder.h"
+#include "../inputs-state-answer/c/InputsStateAnswerEncoder.h"
+
 
 #define BYTE_STEP_ENCODER_TYPE (ByteStepEncoder<void>*)
 
@@ -36,7 +36,7 @@ class AnswerEncoder : public ByteStepEncoder<Answer> {
 
           switch (this->_input->code) {
             case CMD_READ_INPUTS:
-            //            this->_encoder = new InputsStateAnswerEncoder(this->_input.answer as InputsStateAnswer);
+              this->_encoder = new InputsStateAnswerEncoder((InputsStateAnswer *) (this->_input->answer));
               break;
             case CMD_PWM:
               this->_encoder = nullptr;

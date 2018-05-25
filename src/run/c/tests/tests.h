@@ -30,6 +30,7 @@ Uint8Array * encode(ByteEncoder<T> * encoder, Uint8Array * buffer) {
 
 
 
+// test if PWM commands are properly decoded
 void testPWMCommand() {
   // cmd -> id: 123, code: 8 (pwm)
   // pwm -> pin: 1, value: 0.5, period: 1.23
@@ -45,6 +46,7 @@ void testPWMCommand() {
   delete cmd;
 }
 
+// test if StepperMovement commands are properly decoded
 void testStepperMovementCommand() {
   // cmd -> id: 123, code: 8 (StepperMovement)
   // StepperMovement -> duration: 10, initialSpeed: 0.5, acceleration: 0.1
@@ -64,22 +66,29 @@ void testStepperMovementCommand() {
 }
 
 
+// test many commands
 void testCommand() {
   testPWMCommand();
   testStepperMovementCommand();
 }
 
 
-void testAnswer() {
+void testInputsStateAnswer() {
   Uint8Array * buffer = new Uint8Array(1000000);
+  InputsStateAnswer * inputsState = new InputsStateAnswer(0b01100011 /* 99 */, new Uint16Array({0, 1, 2, 3, 4, 5, 6, 7}));
+  Answer * ans = new Answer(123, CMD_READ_INPUTS, 0, inputsState);
 
-  Answer * ans = new Answer(123, 8, 0);
   AnswerEncoder a = AnswerEncoder(ans);
   Uint8Array * _buffer = encode(&a, buffer);
   _buffer->print();
 
   delete buffer;
   delete ans;
+}
+
+
+void testAnswer() {
+  testInputsStateAnswer();
 }
 
 
@@ -106,7 +115,29 @@ void testCommandsExecutor() {
 
 
 
+void testTypedArray() {
+  Uint8Array * uint8_buffer = new Uint8Array({0, 1, 2, 3, 4, 5, 6, 7});
+  uint8_buffer->print();
+  std::cout << Uint8Array::BYTES_PER_ELEMENT() << '\n';
+
+  Uint32Array * uint32_buffer = new Uint32Array({7, 6, 5, 4, 3, 2, 1, 0});
+  uint32_buffer->print();
+  std::cout << Uint32Array::BYTES_PER_ELEMENT() << '\n';
+
+  Uint16Array * uint16_buffer = new Uint16Array(uint8_buffer);
+  uint16_buffer->print();
+
+  uint16_buffer->set(uint32_buffer, 4);
+  uint16_buffer->print();
+
+  delete uint8_buffer;
+  delete uint32_buffer;
+  delete uint16_buffer;
+}
+
+
 void test() {
+//  testTypedArray();
 //  testCommand();
 //  testCommands();
   testAnswer();
