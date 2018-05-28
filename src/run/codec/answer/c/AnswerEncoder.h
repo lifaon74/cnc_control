@@ -10,7 +10,11 @@
 
 class AnswerEncoder : public ByteStepEncoder<Answer> {
   public:
-    AnswerEncoder(Answer * input): ByteStepEncoder<Answer>(input) {
+    AnswerEncoder() {
+    }
+
+    AnswerEncoder * init(Answer * input) {
+      return (AnswerEncoder *) ByteStepEncoder<Answer>::init(input);
     }
 
   protected:
@@ -36,7 +40,7 @@ class AnswerEncoder : public ByteStepEncoder<Answer> {
 
           switch (this->_input->code) {
             case CMD_READ_INPUTS:
-              this->_encoder = new InputsStateAnswerEncoder((InputsStateAnswer *) (this->_input->answer));
+              this->_encoder = (new InputsStateAnswerEncoder())->init((InputsStateAnswer *) (this->_input->answer));
               break;
             case CMD_PWM:
               this->_encoder = nullptr;

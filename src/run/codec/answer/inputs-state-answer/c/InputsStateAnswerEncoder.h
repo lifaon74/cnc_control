@@ -5,7 +5,11 @@
 
 class InputsStateAnswerEncoder : public ByteStepEncoder<InputsStateAnswer> {
   public:
-    InputsStateAnswerEncoder(InputsStateAnswer * input): ByteStepEncoder<InputsStateAnswer>(input) {
+    InputsStateAnswerEncoder() {
+    }
+
+    InputsStateAnswerEncoder * init(InputsStateAnswer * input) {
+      return (InputsStateAnswerEncoder *) ByteStepEncoder<InputsStateAnswer>::init(input);
     }
 
   protected:

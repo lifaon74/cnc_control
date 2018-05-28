@@ -13,6 +13,10 @@ class CommandDecoder : public ByteStepDecoder<Command> {
     CommandDecoder() {
     }
 
+    CommandDecoder * init() {
+      return (CommandDecoder *) ByteStepDecoder<Command>::init();
+    }
+
   protected:
     void * _decoder; // ByteStepDecoder<T>
 
@@ -47,11 +51,11 @@ class CommandDecoder : public ByteStepDecoder<Command> {
 //              case CMD_HOME:
 
               case CMD_PWM:
-                this->_decoder = new PWMCommandDecoder();
+                this->_decoder = (new PWMCommandDecoder())->init();
                 break;
 //              case CMD_ENABLE_STEPPERS:
               case CMD_MOVE:
-                this->_decoder = new StepperMovementCommandDecoder();
+                this->_decoder = (new StepperMovementCommandDecoder())->init();
                 break;
               default:
                 THROW_ERROR("CommandDecoder - Unexpected command code : " + std::to_string(value));

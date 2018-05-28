@@ -58,6 +58,7 @@ class PWMController {
 #define GPIO_GROUP_SIZE 6
 
 // TODO continue here
+// CommandsInterpreter
 class CommandsExecutor {
   public:
     CommandsDecoder decoder;

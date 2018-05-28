@@ -4,12 +4,10 @@ export abstract class ByteStepEncoder<T> extends ByteEncoder<T> {
   protected _step: number;
   protected _yieldValue: number;
 
-  constructor(input: T, initCall: boolean = true) {
-    super(input);
+  constructor() {
+    super();
     this._step = 0;
-    if (initCall) {
-      this._init();
-    }
+    this._done = true;
   }
 
   next(): number {
@@ -19,8 +17,14 @@ export abstract class ByteStepEncoder<T> extends ByteEncoder<T> {
     return value;
   }
 
-  protected _init(): void {
-    this._yieldValue = this._next();
+  init(input: T): this {
+    this._input = input;
+    this._step = 0;
+    this._done = (this._input === null);
+    if (!this._done) {
+      this._yieldValue = this._next();
+    }
+    return this;
   }
 
   protected abstract _next(): number;

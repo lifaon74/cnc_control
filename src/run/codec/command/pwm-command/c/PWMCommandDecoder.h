@@ -11,6 +11,10 @@ class PWMCommandDecoder: public ByteStepDecoder<PWMCommand> {
       ~PWMCommandDecoder() {
         std::cout << RED_TERMINAL("delete PWMCommandDecoder\n");
       }
+
+      PWMCommandDecoder * init() {
+        return (PWMCommandDecoder *) ByteStepDecoder<PWMCommand>::init();
+      }
   
   protected:
     Uint8Array * _bytes;

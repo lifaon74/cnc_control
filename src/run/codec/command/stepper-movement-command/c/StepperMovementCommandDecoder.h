@@ -14,6 +14,10 @@ class StepperMovementCommandDecoder: public ByteStepDecoder<StepperMovementComma
       std::cout << RED_TERMINAL("delete StepperMovementCommandDecoder\n");
     }
 
+    StepperMovementCommandDecoder * init() {
+      return (StepperMovementCommandDecoder *) ByteStepDecoder<StepperMovementCommand>::init();
+    }
+
   protected:
     Uint8Array * _bytes;
     uint32_t _index;

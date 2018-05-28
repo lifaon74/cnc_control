@@ -4,8 +4,8 @@
 template<typename T>
 class ByteEncoder: public Iterator {
   public:
-    ByteEncoder(T * input): Iterator() {
-      this->_input = input;
+    ByteEncoder(): Iterator() {
+      this->_input = nullptr;
     }
 
     T * input() {

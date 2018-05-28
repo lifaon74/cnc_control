@@ -34,15 +34,17 @@ Uint8Array * encode(ByteEncoder<T> * encoder, Uint8Array * buffer) {
 void testPWMCommand() {
   // cmd -> id: 123, code: 8 (pwm)
   // pwm -> pin: 1, value: 0.5, period: 1.23
-  Uint8Array buffer = Uint8Array({123, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63});
+  Uint8Array * buffer = new Uint8Array({123, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63});
 
-  CommandDecoder a;
-  Command * cmd = decode(&a, &buffer);
+  CommandDecoder * decoder = (CommandDecoder *) (new CommandDecoder())->init();
+  Command * cmd = decode(decoder, buffer);
   cmd->print();
 //  PWMCommand * pwm = (PWMCommand *) cmd->command;
 //  pwm->print();
   CAST_COMMAND(, cmd, ->print());
 
+  delete buffer;
+  delete decoder;
   delete cmd;
 }
 
@@ -53,15 +55,17 @@ void testStepperMovementCommand() {
   // moves :
   //  - pin: 1, target: 17
   //  - pin: 3, target: -28
-  Uint8Array buffer = Uint8Array({123, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255});
+  Uint8Array * buffer = new Uint8Array({123, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255});
 
-  CommandDecoder a;
-  Command * cmd = decode(&a, &buffer);
+  CommandDecoder * decoder = (CommandDecoder *) (new CommandDecoder())->init();
+  Command * cmd = decode(decoder, buffer);
   cmd->print();
   CAST_COMMAND(, cmd, ->print());
 //  StepperMovement * movement = (StepperMovementCommand *) cmd->command;
 //  movement->print();
 
+  delete buffer;
+  delete decoder;
   delete cmd;
 }
 
@@ -78,7 +82,8 @@ void testInputsStateAnswer() {
   InputsStateAnswer * inputsState = new InputsStateAnswer(0b01100011 /* 99 */, new Uint16Array({0, 1, 2, 3, 4, 5, 6, 7}));
   Answer * ans = new Answer(123, CMD_READ_INPUTS, 0, inputsState);
 
-  AnswerEncoder a = AnswerEncoder(ans);
+  AnswerEncoder a = AnswerEncoder();
+  a.init(ans);
   Uint8Array * _buffer = encode(&a, buffer);
   _buffer->print();
 
@@ -93,19 +98,22 @@ void testAnswer() {
 
 
 void testCommands() {
-  Uint8Array buffer = Uint8Array({
+  Uint8Array * buffer = new Uint8Array({
     0, 0, 8, 1, 0, 0, 0, 0, 0, 0, 224, 63, 174, 71, 225, 122, 20, 174, 243, 63,
     1, 0, 10, 12, 0, 0, 0, 0, 0, 0, 36, 64, 0, 0, 0, 0, 0, 0, 224, 63, 154, 153, 153, 153, 153, 153, 185, 63, 17, 0, 0, 0, 228, 255, 255, 255
   });
 
   CommandsDecoder decoder;
-  decoder.next(&buffer);
+  std::cout << "pre-decode " << '\n';
+  decoder.decode(buffer);
 
   while (decoder.commands.size() > 0) {
     decoder.commands.front()->print();
     CAST_COMMAND(, decoder.commands.front(), ->print());
     decoder.commands.pop();
   }
+
+  delete buffer;
 }
 
 void testCommandsExecutor() {
@@ -139,8 +147,8 @@ void testTypedArray() {
 void test() {
 //  testTypedArray();
 //  testCommand();
-//  testCommands();
-  testAnswer();
+  testCommands();
+//  testAnswer();
 //  testCommandsExecutor();
 }
 

@@ -8,6 +8,7 @@ class CommandsDecoder {
   public:
     std::queue<Command *> immediateCommands;
     std::queue<Command *> commands;
+    std::queue<Answer *> answers;
 
     CommandsDecoder() {
       this->_commandIndex = 0;
@@ -36,7 +37,7 @@ class CommandsDecoder {
       this->index = (this->index + 1) % 0xffff;
 //        std::cout << "index" << this->index << "\n";
 
-      this->next(&buffer);
+      this->decode(&buffer);
     }
 
     void addPWM() { // TODO HARDCODED
@@ -52,11 +53,11 @@ class CommandsDecoder {
       this->index = (this->index + 1) % 0xffff;
 //        std::cout << "index" << this->index << "\n";
 
-      this->next(&buffer);
+      this->decode(&buffer);
     }
 
 
-    void next(Uint8Array * data) {
+    void decode(Uint8Array * data) {
       this->_checkIfDecoderIsDone();
 
       for(uint32_t i = 0; i < data->length; i++) {
@@ -65,32 +66,75 @@ class CommandsDecoder {
       }
     }
 
+    uint32_t encode(Uint8Array * data) {
+      if (!this->_checkIfEncoderIsDone()) {
+        return 0;
+      }
+
+      uint32_t i = 0;
+
+      for(; i < data->length; i++) {
+        data->buffer[i] = this->_encoder.next();
+
+        if (!this->_checkIfEncoderIsDone()) {
+          return i;
+        }
+      }
+
+      return i;
+    }
+
+
     bool decoding() {
       return !this->_decoder.done();
     }
 
+    bool encoding() {
+      return !this->_encoder.done();
+    }
+
   protected:
     CommandDecoder _decoder;
-//    AnswerDecoder _encoder;
+    AnswerEncoder _encoder;
     uint16_t _commandIndex; // the expected command index
 
     void _checkIfDecoderIsDone() {
       if (this->_decoder.done()) {
         Command * cmd = this->_decoder.output();
-        if (cmd->id == 0xffff) {
-          this->immediateCommands.push(cmd);
-        } else {
-          if (cmd->id != this->_commandIndex) {
-            THROW_ERROR("CommandsDecoder - Expected command id : " + std::to_string(this->_commandIndex) + ", but get instead : " + std::to_string(cmd->id));
-          } else if ((this->commands.size() > 0) && (this->commands.front()->id == cmd->id)) {
-            THROW_ERROR("CommandsDecoder - Buffer overflow");
+
+        if (cmd != nullptr) {
+          if (cmd->immediate()) {
+            this->immediateCommands.push(cmd);
           } else {
-            this->commands.push(cmd);
-            this->_commandIndex = ((cmd->id) + 1) % 0xffff;
+            if (cmd->id != this->_commandIndex) {
+              THROW_ERROR("CommandsDecoder - Expected command id : " + std::to_string(this->_commandIndex) + ", but get instead : " + std::to_string(cmd->id));
+            } else if ((this->commands.size() > 0) && (this->commands.front()->id == cmd->id)) {
+              THROW_ERROR("CommandsDecoder - Buffer overflow");
+            } else {
+              this->commands.push(cmd);
+              this->_commandIndex = ((cmd->id) + 1) & 0x7fff; // % 0x8000;
+            }
           }
         }
-        this->_decoder.reset();
+
+        this->_decoder.init();
       }
+    }
+
+    bool _checkIfEncoderIsDone() {
+      if (this->_encoder.done()) {
+        delete (this->_encoder.input()); // nullptr supported by delete
+
+        if (this->answers.size() > 0) {
+          Answer * answer = this->answers.front();
+          this->answers.pop();
+          this->_encoder.init(answer);
+        } else {
+          return false;
+        }
+      }
+
+      return true;
     }
 };
 

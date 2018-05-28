@@ -5,12 +5,9 @@ template<typename T>
 class ByteStepEncoder: public ByteEncoder<T> {
   public:
 
-    ByteStepEncoder(T * input, bool initCall = true)
-    : ByteEncoder<T>(input) {
+    ByteStepEncoder() {
       this->_step = 0;
-      if (initCall) {
-        this->_init();
-      }
+      this->_done = true;
     }
 
     virtual ~ByteStepEncoder() {}
@@ -22,19 +19,19 @@ class ByteStepEncoder: public ByteEncoder<T> {
       return value;
     }
 
-    void reset() {
+    ByteStepEncoder * init(T * input) {
+      this->_input = input;
       this->_step = 0;
-      this->_done = false;
-      this->_init();
+      this->_done = (this->_input == nullptr);
+      if (!this->_done) {
+        this->_yieldValue = this->_next();
+      }
+      return this;
     }
 
   protected:
     uint32_t _step;
     uint8_t _yieldValue;
-
-    void _init() {
-      this->_yieldValue = this->_next();
-    }
 
     virtual uint8_t _next() = 0;
 };

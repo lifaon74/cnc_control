@@ -1,11 +1,11 @@
 import { Iterator } from '../../ts/Iterator';
 
 export abstract class ByteEncoder<T> extends Iterator {
-  protected _input: T;
+  protected _input: T | null;
 
-  constructor(input: T) {
+  constructor() {
     super();
-    this._input = input;
+    this._input = null;
   }
 
   get input(): T {

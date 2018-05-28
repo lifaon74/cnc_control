@@ -1,7 +1,7 @@
 import { Iterator } from '../../ts/Iterator';
 
 export abstract class ByteDecoder<T>  extends Iterator {
-  protected _output: T;
+  protected _output: T | null;
 
   constructor() {
     super();
