@@ -18,11 +18,16 @@ class ByteStepDecoder: public ByteDecoder<T> {
     }
 
     ByteStepDecoder * init() {
-      this->_output = nullptr;
-      this->_step = 0;
-      this->_done = false;
-      this->_next(0);
-      return this;
+      if (this->done()) {
+        this->_output = nullptr;
+        this->_step = 0;
+        this->_done = false;
+        this->_next(0);
+        return this;
+      } else {
+        THROW_ERROR("Cannot init an undone ByteStepDecoder");
+        return nullptr;
+      }
     }
 
   protected:

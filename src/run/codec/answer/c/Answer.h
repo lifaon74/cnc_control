@@ -4,10 +4,10 @@
 #include "../../codes/c/codes.h"
 #include "../inputs-state-answer/c/InputsStateAnswerEncoder.h"
 
-// cast a $command (Command) to its type
+// cast an $answer (Answer) to its type
 // $pre : code before the casting
 // $post : code after the casting
-// $command : the command (Command) to cast (actually, cast the $command->command)
+// $answer : the answer (Answer) to cast (actually, cast the $answer->answer)
 #define CAST_ANSWER($pre, $answer, $post) \
   switch ($answer->code) { \
     case CMD_READ_INPUTS: \
@@ -19,7 +19,7 @@
   }
 
 
-#define DELETE_ANSWER($command) CAST_ANSWER(delete , $command,);
+#define DELETE_ANSWER($answer) CAST_ANSWER(delete , $answer,);
 
 class Answer {
   public:
@@ -29,6 +29,7 @@ class Answer {
     void * answer;
 
     Answer(uint16_t id = 0, uint8_t code = 0, uint8_t state = 0, void * answer = nullptr) {
+//      std::cout << "create Answer " << std::addressof(*this) << "\n";
       this->id = id;
       this->code = code;
       this->state = state;
@@ -36,8 +37,11 @@ class Answer {
     }
 
     ~Answer() {
-      std::cout << RED_TERMINAL("delete Answer\n");
-      DELETE_ANSWER(this);
+//      std::cout << RED_TERMINAL("delete Answer\n");
+//      std::cout << std::addressof(*this) << "\n";
+      if (this->answer != nullptr) {
+        DELETE_ANSWER(this);
+      }
     }
 
     void print() {

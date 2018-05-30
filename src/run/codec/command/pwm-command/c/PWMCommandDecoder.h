@@ -9,7 +9,7 @@ class PWMCommandDecoder: public ByteStepDecoder<PWMCommand> {
       }
   
       ~PWMCommandDecoder() {
-        std::cout << RED_TERMINAL("delete PWMCommandDecoder\n");
+//        std::cout << RED_TERMINAL("delete PWMCommandDecoder\n");
       }
 
       PWMCommandDecoder * init() {

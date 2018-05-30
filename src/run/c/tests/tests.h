@@ -104,7 +104,6 @@ void testCommands() {
   });
 
   CommandsDecoder decoder;
-  std::cout << "pre-decode " << '\n';
   decoder.decode(buffer);
 
   while (decoder.commands.size() > 0) {
@@ -112,6 +111,20 @@ void testCommands() {
     CAST_COMMAND(, decoder.commands.front(), ->print());
     decoder.commands.pop();
   }
+
+  delete buffer;
+}
+
+void testAnswers() {
+  Uint8Array * buffer = new Uint8Array(1000);
+
+  CommandsDecoder decoder;
+  decoder.pushAnswer(new Answer(123, CMD_READ_INPUTS, 0, new InputsStateAnswer(0b01100011 /* 99 */, new Uint16Array({0, 1, 2, 3, 4, 5, 6, 7}))));
+  decoder.pushAnswer(new Answer(124, CMD_PWM, 0, nullptr));
+  decoder.pushAnswer(new Answer(125, CMD_PWM, 0, nullptr));
+
+  uint32_t length = decoder.encode(buffer);
+  buffer->subarray(0, length)->print();
 
   delete buffer;
 }
@@ -147,9 +160,10 @@ void testTypedArray() {
 void test() {
 //  testTypedArray();
 //  testCommand();
-  testCommands();
+//  testCommands();
 //  testAnswer();
-//  testCommandsExecutor();
+//  testAnswers();
+  testCommandsExecutor();
 }
 
 

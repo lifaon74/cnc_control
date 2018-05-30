@@ -22,6 +22,13 @@ class CommandsDecoder {
         this->addMove();
         this->addPWM();
       }
+
+      Uint8Array * buffer = new Uint8Array(1000);
+      uint32_t length = this->encode(buffer);
+      if (length > 0) {
+        buffer->subarray(0, length)->print();
+      }
+      delete buffer;
     }
 
     void addMove() { // TODO HARDCODED
@@ -93,6 +100,10 @@ class CommandsDecoder {
       return !this->_encoder.done();
     }
 
+    void pushAnswer(Answer * answer) {
+      this->answers.push(answer);
+    }
+
   protected:
     CommandDecoder _decoder;
     AnswerEncoder _encoder;
@@ -123,13 +134,17 @@ class CommandsDecoder {
 
     bool _checkIfEncoderIsDone() {
       if (this->_encoder.done()) {
-        delete (this->_encoder.input()); // nullptr supported by delete
+        Answer * answer = this->_encoder.input();
+        delete answer; // nullptr supported by delete
 
         if (this->answers.size() > 0) {
-          Answer * answer = this->answers.front();
+          answer = this->answers.front();
           this->answers.pop();
           this->_encoder.init(answer);
         } else {
+          if (answer != nullptr) {
+            this->_encoder.init(nullptr);
+          }
           return false;
         }
       }

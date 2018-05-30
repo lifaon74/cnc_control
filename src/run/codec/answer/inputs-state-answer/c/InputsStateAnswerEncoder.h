@@ -12,6 +12,10 @@ class InputsStateAnswerEncoder : public ByteStepEncoder<InputsStateAnswer> {
       return (InputsStateAnswerEncoder *) ByteStepEncoder<InputsStateAnswer>::init(input);
     }
 
+    ~InputsStateAnswerEncoder() {
+//      std::cout << RED_TERMINAL("delete InputsStateAnswerEncoder\n");
+    }
+
   protected:
     Uint8Array * _bytes;
     uint32_t _index;

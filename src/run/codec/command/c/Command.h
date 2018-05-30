@@ -38,8 +38,10 @@ class Command {
     }
 
     ~Command() {
-      std::cout << RED_TERMINAL("delete Command\n");
-      DELETE_COMMAND(this);
+//      std::cout << RED_TERMINAL("delete Command\n");
+      if (this->command != nullptr) {
+        DELETE_COMMAND(this);
+      }
     }
 
     void print() {

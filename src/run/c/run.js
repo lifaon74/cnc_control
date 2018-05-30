@@ -6,6 +6,10 @@
 
 const addon = require('./build/Release/binding');
 
-
-console.log(addon.start());
-console.log('test');
+try {
+  addon.start();
+} catch (error) {
+  console.log('\n\n------------------CATCHED ERROR------------------\n\n');
+  console.log(error);
+  console.log('\n\n-------------------------------------------------\n\n');
+}

@@ -11,7 +11,7 @@ class StepperMovementCommandDecoder: public ByteStepDecoder<StepperMovementComma
     }
 
     ~StepperMovementCommandDecoder() {
-      std::cout << RED_TERMINAL("delete StepperMovementCommandDecoder\n");
+//      std::cout << RED_TERMINAL("delete StepperMovementCommandDecoder\n");
     }
 
     StepperMovementCommandDecoder * init() {

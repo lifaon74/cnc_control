@@ -120,6 +120,8 @@ class TypedArray {
         return ((index + length) < 0) ? 0 : (length + index);
       } else if (index > length) {
         return length;
+      } else {
+        return index;
       }
     }
 

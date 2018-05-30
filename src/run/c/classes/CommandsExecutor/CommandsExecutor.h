@@ -92,7 +92,7 @@ class CommandsExecutor {
 
         if (this->currentCommand != nullptr) {
           if ((this->currentCommand->code == CMD_MOVE) && (this->steppersController->currentMove == nullptr)) { // finished move
-            this->deleteCurrentCommand();
+            this->finishCurrentCommand(new Answer(this->currentCommand->id, CMD_MOVE, 0, nullptr));
           }
         }
 
@@ -106,10 +106,14 @@ class CommandsExecutor {
             this->decoder.commands.pop();
 
             switch (this->currentCommand->code) {
+              case CMD_READ_INPUTS:
+//            InputsStateAnswer * inputsState = new InputsStateAnswer(0b01100011 /* 99 */, new Uint16Array({0, 1, 2, 3, 4, 5, 6, 7}));
+//              Answer * ans = new Answer(123, CMD_READ_INPUTS, 0, inputsState);
+                break;
               case CMD_PWM:
                 std::cout << "new pwm" << "\n";
                 this->pwmController->addPWM((PWMCommand *) (this->currentCommand->command));
-                this->deleteCurrentCommand();
+                this->finishCurrentCommand(new Answer(this->currentCommand->id, CMD_PWM, 0, nullptr));
                 break;
               case CMD_MOVE:
                 std::cout << "startMovement" << "\n";
@@ -128,6 +132,11 @@ class CommandsExecutor {
     void deleteCurrentCommand() {
       delete (this->currentCommand);
       this->currentCommand = nullptr;
+    }
+
+    void finishCurrentCommand(Answer * answer) {
+      this->deleteCurrentCommand();
+      this->decoder.pushAnswer(answer);
     }
 
 

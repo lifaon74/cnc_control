@@ -17,6 +17,10 @@ class AnswerEncoder : public ByteStepEncoder<Answer> {
       return (AnswerEncoder *) ByteStepEncoder<Answer>::init(input);
     }
 
+    ~AnswerEncoder() {
+//      std::cout << RED_TERMINAL("delete AnswerEncoder\n");
+    }
+
   protected:
     void * _encoder; // ByteStepEncoder<T>
 
@@ -49,7 +53,7 @@ class AnswerEncoder : public ByteStepEncoder<Answer> {
               this->_encoder = nullptr;
               break;
             default:
-              THROW_ERROR("AnswerEncoder - Unexpected command code : " + std::to_string(this->_input->code));
+              THROW_ERROR("AnswerEncoder - Unexpected answer code : " + std::to_string(this->_input->code));
               return 0;
           }
 
@@ -57,8 +61,12 @@ class AnswerEncoder : public ByteStepEncoder<Answer> {
           return this->_input->state;
 
         case 4: // answer
-          if((this->_encoder == nullptr) || (BYTE_STEP_ENCODER_TYPE(this->_encoder))->done()) {
+          if (this->_encoder == nullptr) {
             this->_done = true;
+            return 0;
+          } else if((BYTE_STEP_ENCODER_TYPE(this->_encoder))->done()) {
+            this->_done = true;
+            delete (BYTE_STEP_ENCODER_TYPE(this->_encoder));
             return 0;
           } else {
             return (BYTE_STEP_ENCODER_TYPE(this->_encoder))->next();

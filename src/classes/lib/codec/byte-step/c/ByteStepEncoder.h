@@ -20,13 +20,18 @@ class ByteStepEncoder: public ByteEncoder<T> {
     }
 
     ByteStepEncoder * init(T * input) {
-      this->_input = input;
-      this->_step = 0;
-      this->_done = (this->_input == nullptr);
-      if (!this->_done) {
-        this->_yieldValue = this->_next();
+      if (this->done()) {
+        this->_input = input;
+        this->_step = 0;
+        this->_done = (this->_input == nullptr);
+        if (!this->_done) {
+          this->_yieldValue = this->_next();
+        }
+        return this;
+      } else {
+        THROW_ERROR("Cannot init an undone ByteStepEncoder");
+        return nullptr;
       }
-      return this;
     }
 
   protected:
