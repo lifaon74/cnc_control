@@ -156,6 +156,19 @@ void testTypedArray() {
   delete uint16_buffer;
 }
 
+void testSharedBuffer() {
+
+  SharedBuffer buffer1 = SharedBuffer("test", 16);
+  buffer1.open(true);
+  Uint8Array * array = buffer1.toUint8Array();
+  array->print();
+
+  array->buffer[0] = 10;
+
+  SharedBuffer buffer2 = SharedBuffer("test", 16);
+  buffer2.open();
+  buffer2.toUint8Array()->print();
+}
 
 void test() {
 //  testTypedArray();
@@ -163,7 +176,8 @@ void test() {
 //  testCommands();
 //  testAnswer();
 //  testAnswers();
-  testCommandsExecutor();
+//  testCommandsExecutor();
+  testSharedBuffer();
 }
 
 

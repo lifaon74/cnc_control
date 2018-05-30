@@ -13,6 +13,7 @@
 
 #include "./snippets/snippets.h"
 #include "./classes/TypedArray/TypedArray.h"
+#include "./classes/SharedBuffer/SharedBuffer.h"
 //#include "classes/SharedBufferStream.h"
 #include "../../classes/lib/codec/c/codec.h"
 //#include "../codec/command/c/CommandDecoder.h"
