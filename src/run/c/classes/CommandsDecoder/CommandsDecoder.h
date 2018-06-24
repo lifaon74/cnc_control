@@ -100,6 +100,12 @@ class CommandsDecoder {
       return !this->_encoder.done();
     }
 
+    Command * popCommand() {
+      Command * command = this->commands.front();
+      this->commands.pop();
+      return command;
+    }
+
     void pushAnswer(Answer * answer) {
       this->answers.push(answer);
     }
