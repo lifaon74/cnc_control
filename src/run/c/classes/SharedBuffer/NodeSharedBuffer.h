@@ -20,18 +20,37 @@ char * StringCopy(char * string) {
   return copy;
 }
 
-// TODO => find how to create persistent variable with v8 to cache the buffer
-template<typename T>
-class PersistentV8Variable {
-  public:
-    v8::Local<T> * local;
-    v8::Persistent<T> persistent;
-
-    PersistentV8Variable(v8::Local<T> * local, v8::Isolate * isolate) {
-      this->local = local;
-      this->persistent.Reset(isolate, &(this->local));
-    }
-};
+//template<typename T>
+//class PersistentV8Variable;
+//
+//template<typename T>
+//void setWeakFunction(const v8::WeakCallbackInfo<PersistentV8Variable<T>> &data) {
+//    auto *v = data.GetParameter();
+//    std::cout << " Collector\n";
+//    v->persistent.Reset();
+////    delete[] v->ptr;
+//    delete v;
+//
+//}
+//
+//// TODO => find how to create persistent variable with v8 to cache the buffer
+//template<typename T>
+//class PersistentV8Variable {
+//  public:
+//    v8::Local<T> local;
+//    v8::Persistent<T> persistent;
+//
+//    PersistentV8Variable(v8::Local<T> local, v8::Isolate * isolate) {
+//      this->local = local;
+//      this->persistent.Reset(isolate, this->local);
+//      this->persistent.SetWeak(this, setWeakFunction, v8::WeakCallbackType::kParameter);
+//      this->persistent.MarkIndependent();
+//    }
+//
+//    ~PersistentV8Variable() {
+//      std::cout << "delete PersistentV8Variable" << '\n';
+//    }
+//};
 
 
 class NodeSharedBuffer : public Nan::ObjectWrap {
@@ -51,29 +70,21 @@ class NodeSharedBuffer : public Nan::ObjectWrap {
     NodeSharedBuffer(char * key, uint32_t size) {
       this->_key = key;
       this->sharedBuffer = new SharedBuffer(key, size);
-      this->buffer = nullptr;
     }
 
     ~NodeSharedBuffer() {
       std::cout << "delete NodeSharedBuffer" << '\n';
       delete[] this->_key;
       delete this->sharedBuffer;
-      delete this->buffer;
     }
   protected:
     char * _key;
     SharedBuffer * sharedBuffer;
-    v8::Local<v8::ArrayBuffer> * buffer;
 
 };
 
 Nan::Persistent<v8::FunctionTemplate> NodeSharedBuffer::constructor;
 
-void CleanupV8Point(v8::Persistent<v8::Object> object, void*) {
-std::cout << "delete NodeSharedBuffer" << '\n';
-    // do whatever cleanup on object that you're looking for
-//    object.destroyCppObjects();
-}
 
 NAN_MODULE_INIT(NodeSharedBuffer::Init) {
   v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(NodeSharedBuffer::New);
@@ -132,17 +143,11 @@ NAN_GETTER(NodeSharedBuffer::HandleGetters) {
   } else if (propertyName == "size") {
     info.GetReturnValue().Set(Nan::New(self->sharedBuffer->size()));
   } else if (propertyName == "buffer") {
-    if (self->buffer == nullptr) {
+    if (self->sharedBuffer->buffer() == nullptr) {
       info.GetReturnValue().Set(Nan::Null());
     } else {
-      info.GetReturnValue().Set(*(self->buffer));
-//      v8::Isolate * isolate = v8::Isolate::GetCurrent();
-//      info.GetReturnValue().Set(Nan::New<v8::ArrayBuffer>(v8::ArrayBuffer::New(isolate, self->sharedBuffer->buffer(), self->sharedBuffer->size())));
-
-//      v8::Local<v8::ArrayBuffer> ab = v8::ArrayBuffer::New(isolate, self->sharedBuffer->buffer(), self->sharedBuffer->size());
-//      v8::Persistent<v8::ArrayBuffer> pab(isolate, ab);
-//      info.GetReturnValue().Set(ab);
-
+      v8::Isolate * isolate = v8::Isolate::GetCurrent();
+      info.GetReturnValue().Set(Nan::New<v8::ArrayBuffer>(v8::ArrayBuffer::New(isolate, self->sharedBuffer->buffer(), self->sharedBuffer->size())));
     }
   } else {
     info.GetReturnValue().Set(Nan::Undefined());
@@ -179,16 +184,6 @@ NAN_METHOD(NodeSharedBuffer::open) {
 
   try {
     self->sharedBuffer->open(initialize);
-
-
-    v8::Isolate * isolate = v8::Isolate::GetCurrent();
-//    self->buffer = &(Nan::New<v8::ArrayBuffer>(v8::ArrayBuffer::New(isolate, self->sharedBuffer->buffer(), self->sharedBuffer->size())));
-    v8::Local<v8::ArrayBuffer> ab = v8::ArrayBuffer::New(isolate, self->sharedBuffer->buffer(), self->sharedBuffer->size());
-    PersistentV8Variable<v8::ArrayBuffer> * test = new PersistentV8Variable<v8::ArrayBuffer>(&ab, isolate);
-
-//    v8::Persistent<v8::ArrayBuffer> pab(isolate, ab);
-//    pab.MarkIndependent();
-    self->buffer = &(ab);
   } catch (const std::exception& e){
     std::cerr << e.what() << '\n';
     Nan::ThrowError(e.what());
@@ -202,7 +197,6 @@ NAN_METHOD(NodeSharedBuffer::close) {
 
   try {
     self->sharedBuffer->close();
-    self->buffer = nullptr;
   } catch (const std::exception& e){
     std::cerr << e.what() << '\n';
     Nan::ThrowError(e.what());

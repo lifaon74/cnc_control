@@ -10,15 +10,18 @@ try {
   // delete global.obj;
   // global.gc();
 
-  const obj = new addon.NodeSharedBuffer('hello', 10);
-  console.log(obj.key, obj.size, obj.opened, obj.buffer);
+  const sharedBuffer1 = new addon.NodeSharedBuffer('hello', 10);
+  // console.log(sharedBuffer1.key, sharedBuffer1.size, sharedBuffer1.opened, sharedBuffer1.buffer);
 
-  obj.open(true);
-  console.log(obj.opened, obj.buffer === obj.buffer);
-  console.log('ok');
-  // console.log(obj.buffer.byteLength);
-  console.log(obj.buffer);
+  sharedBuffer1.open(true);
+  const buffer1 = new Uint8Array(sharedBuffer1.buffer);
 
+  const sharedBuffer2 = new addon.NodeSharedBuffer('hello', 10);
+  sharedBuffer2.open();
+  const buffer2 = new Uint8Array(sharedBuffer2.buffer);
+
+  buffer1[0] = 1;
+  console.log(buffer1, buffer2);
 
   // obj.close();
   // console.log('ok1');
