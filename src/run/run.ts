@@ -23,7 +23,8 @@ async function _masterProgram(): Promise<void> {
 
 async function _forkProgram(): Promise<void> {
   console.log('forkProgram');
-  const sharedArray: SharedBufferStream = SharedBufferStream.create();
+  const sharedArray: SharedBufferStream = new SharedBufferStream('agcode', 1e6);
+  sharedArray.open(false);
   let i: number = -1;
 
   while(true) {
@@ -40,7 +41,8 @@ async function _forkProgram(): Promise<void> {
 
 
 function masterProgram(): void {
-  const sharedArray: SharedBufferStream = SharedBufferStream.createMaster();
+  const sharedArray: SharedBufferStream = new SharedBufferStream('agcode', 1e6);
+  sharedArray.open(true);
   const file: number = $fs.openSync('../assets/test.bin.agcode', 'r');
 
   let i: number = 0;
@@ -48,7 +50,7 @@ function masterProgram(): void {
   while(true) {
     if(sharedArray.readable) {
       sharedArray.receive();
-      const bytesRead: number = $fs.readSync(file, sharedArray.buffer, SharedBufferStream.START_OFFSET, sharedArray.maxSize, i);
+      const bytesRead: number = $fs.readSync(file, sharedArray.bufferView, SharedBufferStream.START_OFFSET, sharedArray.maxSize, i);
       if(bytesRead > 0) {
         i += bytesRead;
         sharedArray.size = bytesRead;
@@ -80,6 +82,6 @@ if ($cluster.isMaster) {
 
   masterProgram();
 } else {
-  require('./c/run.js');
-  // forkProgram();
+  // require('./c/run.js');
+  forkProgram();
 }

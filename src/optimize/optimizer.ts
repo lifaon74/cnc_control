@@ -2,8 +2,8 @@ import * as $fs from 'fs';
 import { GCODEHelper, GCODECommand } from './gcodeHelper';
 import { Stepper } from '../classes/stepper';
 import {
-  ConstrainedSynchronizedMovementsSequence, ConstrainedMovementsSequence, StepperMovementsSequence,
-  StepperMovesSequence, CorrelatedArrayBuffers, OptimizedSynchronizedMovementsSequence, CorrelatedArrayBuffersTree, SynchronizedMovementsSequence, MovementsSequence, OptimizedMovementsSequence
+  ConstrainedSynchronizedMovementsSequence, ConstrainedMovementsSequence,
+  CorrelatedArrayBuffers, OptimizedSynchronizedMovementsSequence, CorrelatedArrayBuffersTree, SynchronizedMovementsSequence, MovementsSequence, OptimizedMovementsSequence
 } from '../classes/kinematics';
 import { Timer } from '../classes/Timer';
 import { Float } from '../classes/lib/Float';
@@ -52,8 +52,8 @@ export class PWMController {
 
 const STEPPERS: Stepper[] = [
   new Stepper('x', 0, 0, 1, ACCELERATION_LIMIT, SPEED_LIMIT, JERK_LIMIT, stepsPerTurn / 40), // 160
-  new Stepper('y', 1, 2, 3, ACCELERATION_LIMIT, SPEED_LIMIT, JERK_LIMIT, stepsPerTurn  / 40),
-  new Stepper('z', 2, 4, 5, ACCELERATION_LIMIT, SPEED_LIMIT, JERK_LIMIT, (stepsPerTurn * 5.21)  / 40), // 3316.36
+  new Stepper('y', 1, 2, 3, ACCELERATION_LIMIT, SPEED_LIMIT, JERK_LIMIT, stepsPerTurn / 40),
+  new Stepper('z', 2, 4, 5, ACCELERATION_LIMIT, SPEED_LIMIT, JERK_LIMIT, (stepsPerTurn * 5.21) / 40), // 3316.36
   new Stepper('e', 3, null, null, 1e10, SPEED_LIMIT, JERK_LIMIT, 160 / 6400 * stepsPerTurn),
 ];
 
@@ -74,8 +74,6 @@ export const CONFIG: ICONFIG = {
 };
 
 
-
-
 export class GCODEOptimizer {
 
   static typeRegExp: RegExp = new RegExp('^TYPE:(.+)$');
@@ -86,11 +84,11 @@ export class GCODEOptimizer {
    * @returns {string | null}
    */
   static getMatterSliceMovementType(command: GCODECommand): string | null {
-    if(command.comment) {
+    if (command.comment) {
       const match: RegExpExecArray = this.typeRegExp.exec(command.comment);
-      if(match !== null) {
+      if (match !== null) {
         const type: string = match[1];
-        if(type in MatterSliceMovementTypes) {
+        if (type in MatterSliceMovementTypes) {
           return MatterSliceMovementTypes[type];
         } else {
           console.warn('Unknown type : ' + type);
@@ -109,11 +107,11 @@ export class GCODEOptimizer {
    * @returns {number | null}
    */
   static getMatterSliceLayer(command: GCODECommand): number | null {
-    if(command.comment) {
+    if (command.comment) {
       const match: RegExpExecArray = this.layerRegExp.exec(command.comment);
-      if(match !== null) {
+      if (match !== null) {
         const layer: number = parseInt(match[1]);
-        if(isNaN(layer)) {
+        if (isNaN(layer)) {
           console.warn('Unknown layer : ' + layer);
         } else {
           return layer;
@@ -172,37 +170,37 @@ export class GCODEOptimizer {
       layer: 0
     };
 
-    for(let i = 0; i < config.steppers.length; i++) {
+    for (let i = 0; i < config.steppers.length; i++) {
       localConfig.position[config.steppers[i].name] = 0;
     }
 
-    for(let j = 0; j < commands.length; j++) {
+    for (let j = 0; j < commands.length; j++) {
       command = commands[j];
       // console.log(command);
       // if(j > 30) break;
 
       const type: string = this.getMatterSliceMovementType(command);
-      if(type) localConfig.type = type;
+      if (type) localConfig.type = type;
 
-      switch(command.command) {
+      switch (command.command) {
         case 'G0':
         case 'G1':
           // console.log(command.params);
-          if(command.params['f']) {
+          if (command.params['f']) {
             localConfig.speed = (command.params['f'] * localConfig.unitFactor) / 60;
           }
 
-          for(let i = 0; i < config.steppers.length; i++) {
+          for (let i = 0; i < config.steppers.length; i++) {
             stepper = config.steppers[i];
             movesSequence = movementsSequence.children[i];
 
             let value: number = command.params[stepper.name];
             let delta: number = 0;
 
-            if(typeof value === 'number') {
+            if (typeof value === 'number') {
               value = value * localConfig.unitFactor * stepper.stepsPerMm; // convert value to steps
 
-              if(localConfig.absolutePosition) {
+              if (localConfig.absolutePosition) {
                 delta = (value - localConfig.position[stepper.name]);
                 localConfig.position[stepper.name] = value;
               } else {
@@ -235,7 +233,7 @@ export class GCODEOptimizer {
           localConfig.absolutePosition = false;
           break;
         case 'G92': // define position
-          for(let i = 0; i < config.steppers.length; i++) {
+          for (let i = 0; i < config.steppers.length; i++) {
             stepper = config.steppers[i];
             localConfig.position[stepper.name] = command.params[stepper.name] || 0;
           }
@@ -281,8 +279,6 @@ export class GCODEOptimizer {
   }
 
 
-
-
   static createAGCODEFile(
     path: string,
     movementsSequence: OptimizedSynchronizedMovementsSequence,
@@ -294,17 +290,17 @@ export class GCODEOptimizer {
       const moveMask: number = (1 << movesLength) - 1;
 
       // console.log(movementsSequence.toString());
-      if(options.binary) {
-        const times: Buffer         = Buffer.from(movementsSequence._buffers['times'].buffer as ArrayBuffer);
+      if (options.binary) {
+        const times: Buffer = Buffer.from(movementsSequence._buffers['times'].buffer as ArrayBuffer);
         const initialSpeeds: Buffer = Buffer.from(movementsSequence._buffers['initialSpeeds'].buffer as ArrayBuffer);
         const accelerations: Buffer = Buffer.from(movementsSequence._buffers['accelerations'].buffer as ArrayBuffer);
 
         const moves: Buffer[] = [];
-        for(let j = 0; j < movesLength; j++) {
+        for (let j = 0; j < movesLength; j++) {
           moves[j] = Buffer.from(new Int32Array(movementsSequence.children[j]._buffers['values']).buffer as ArrayBuffer);
         }
 
-        for(let i = 0, length = movementsSequence.length; i < length; i++) {
+        for (let i = 0, length = movementsSequence.length; i < length; i++) {
           let a: number = i * 8;
           let b: number = a + 8;
 
@@ -316,13 +312,13 @@ export class GCODEOptimizer {
 
           a = i * 4;
           b = a + 4;
-          for(let j = 0; j < movesLength; j++) {
+          for (let j = 0; j < movesLength; j++) {
             // console.log(moves[j].slice(a, b));
             $fs.writeSync(file, moves[j].slice(a, b));
           }
         }
       } else {
-        for(let i = 0, length = movementsSequence.length; i < length; i++) {
+        for (let i = 0, length = movementsSequence.length; i < length; i++) {
           $fs.writeSync(file, 'G0 ');
           // $fs.writeSync(file, 'I' + stepperMovementsSequence._buffers.indices[i] + ' ');
           $fs.writeSync(file, 'T' + movementsSequence._buffers.times[i] + ' ');
@@ -330,7 +326,7 @@ export class GCODEOptimizer {
           $fs.writeSync(file, 'A' + movementsSequence._buffers.accelerations[i] + ' ');
 
           let move: CorrelatedArrayBuffers;
-          for(let j = 0; j < movesLength; j++) {
+          for (let j = 0; j < movesLength; j++) {
             move = movementsSequence.children[j];
             $fs.writeSync(file, CONFIG.steppers[j].name.toUpperCase() + move._buffers.values[i] + ' ');
           }
@@ -345,23 +341,23 @@ export class GCODEOptimizer {
     let totalTime: number = 0;
     const position: number[] = [];
 
-    for(let i = 0, length = optimizedMovementsSequence.length; i < length; i++) {
+    for (let i = 0, length = optimizedMovementsSequence.length; i < length; i++) {
 
       const time: number = optimizedMovementsSequence._buffers['times'][i];
-      const acceleration: number =  optimizedMovementsSequence._buffers['accelerations'][i];
-      const speed: number =  optimizedMovementsSequence._buffers['initialSpeeds'][i];
+      const acceleration: number = optimizedMovementsSequence._buffers['accelerations'][i];
+      const speed: number = optimizedMovementsSequence._buffers['initialSpeeds'][i];
 
       totalTime += optimizedMovementsSequence._buffers.times[i];
 
-      for(let j = 0, l = optimizedMovementsSequence.children.length; j < l; j++) {
+      for (let j = 0, l = optimizedMovementsSequence.children.length; j < l; j++) {
         const movement: OptimizedMovementsSequence = optimizedMovementsSequence.children[j];
         const value: number = movement._buffers['values'][i];
 
-        if(position[j] === void 0) position[j] = 0;
+        if (position[j] === void 0) position[j] = 0;
         position[j] += value;
 
         const _value: number = 0.5 * acceleration * time * time + speed * time;
-        if(!Float.equals(_value, 1, 1e-9)) {
+        if (!Float.equals(_value, 1, 1e-9)) {
           console.log(_value, value, ' -> ', time, acceleration, speed);
           throw new Error(`Invalid optimization: ${i}`);
         }
@@ -380,7 +376,7 @@ export class GCODEOptimizer {
 
 function createSynchronizedMovementsSequence(size: number = 0, moves: number = 2): SynchronizedMovementsSequence {
   const collection = new SynchronizedMovementsSequence(size, { 'values': Float64Array });
-  for(let i = 0; i < moves; i++) {
+  for (let i = 0; i < moves; i++) {
     collection.children[i] = new MovementsSequence(size, { 'values': Float64Array });
   }
   collection.length = size;
@@ -389,7 +385,7 @@ function createSynchronizedMovementsSequence(size: number = 0, moves: number = 2
 
 function buildSynchronizedMovementsSequence(data: number[][]): SynchronizedMovementsSequence {
   const collection = createSynchronizedMovementsSequence(0, data.length);
-  for(let i = 0; i < data.length; i++) {
+  for (let i = 0; i < data.length; i++) {
     collection.children[i]._buffers['values'] = new Float64Array(data[i]);
   }
   return collection;
@@ -398,40 +394,40 @@ function buildSynchronizedMovementsSequence(data: number[][]): SynchronizedMovem
 
 function testAreCollinear() {
   let collection = buildSynchronizedMovementsSequence([[0, 0], [0, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 0]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 0]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[1, 0], [0, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[1, 0], [0, 0]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[1, 0], [0, 0]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 1], [0, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, 0]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, 0]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 0], [1, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 0]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 0]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 0], [0, 1]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 1]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [0, 1]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 4], [0, 1]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 4], [0, 1]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 4], [0, 1]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[4, 0], [1, 0]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[4, 0], [1, 0]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[4, 0], [1, 0]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 0], [1, 1]]);
-  if(!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 1]] should be collinear');
+  if (!collection.areCollinear(0, 1)) throw new Error('[[0, 0], [1, 1]] should be collinear');
 
   collection = buildSynchronizedMovementsSequence([[-1, 0], [1, 0]]);
-  if(collection.areCollinear(0, 1)) throw new Error('[[-1, 0], [1, 0]] should not be collinear');
+  if (collection.areCollinear(0, 1)) throw new Error('[[-1, 0], [1, 0]] should not be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 1], [0, -1]]);
-  if(collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, -1]] should not be collinear');
+  if (collection.areCollinear(0, 1)) throw new Error('[[0, 1], [0, -1]] should not be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, 1], [1, 0]]);
-  if(collection.areCollinear(0, 1)) throw new Error('[[0, 1], [1, 0]] should not be collinear');
+  if (collection.areCollinear(0, 1)) throw new Error('[[0, 1], [1, 0]] should not be collinear');
 
   collection = buildSynchronizedMovementsSequence([[0, -1], [1, 0]]);
-  if(collection.areCollinear(0, 1)) throw new Error('[[0, -1], [1, 0]] should not be collinear');
+  if (collection.areCollinear(0, 1)) throw new Error('[[0, -1], [1, 0]] should not be collinear');
 
 }
 
@@ -440,21 +436,19 @@ function test() {
 }
 
 
-
 function start() {
   test();
 
   // const fileName: string = 'tower';
   // const fileName: string = 'circle';
-  const fileName: string = 'square';
+  // const fileName: string = 'square';
+  const fileName: string = 'plenty_square';
   // const fileName: string = 'thin_tower';
   GCODEOptimizer.optimizeFile('../assets/' + fileName + '.gcode', CONFIG).catch(_ => console.log(_));
 }
 
 
-
-
-if(IS_BROWSER) {
+if (IS_BROWSER) {
   window.onload = start;
 } else {
   start();

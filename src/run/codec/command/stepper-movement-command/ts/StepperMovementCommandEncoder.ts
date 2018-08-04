@@ -6,8 +6,8 @@ export class StepperMovementCommandEncoder extends ByteStepEncoder<StepperMoveme
   protected _index: number;
   protected _moveIndex: number;
 
-  constructor(input: StepperMovementCommand) {
-    super(input);
+  constructor() {
+    super();
   }
 
   protected _next(): number {

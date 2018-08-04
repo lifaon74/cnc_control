@@ -1,70 +1,90 @@
-import { createSharedBuffer } from 'shared-buffer';
+// import { createSharedBuffer } from 'shared-buffer';
+const addon = require('./c/build/Release/binding');
 
-export class SharedBufferStream {
-  static ID: number = 10;
+interface NodeSharedBuffer {
+  new(key: string, size: number): NodeSharedBuffer;
+  readonly key: string;
+  readonly size: number;
+  readonly opened: boolean;
+  readonly buffer: ArrayBuffer | null;
 
+  open(initialize?: boolean): void;
+  close(): void;
+}
+
+export class SharedBufferStream extends (addon.NodeSharedBuffer as NodeSharedBuffer) {
   static PACKET_ID_REG: number = 0;
   static PACKET_SIZE_REG: number = 1;
   static START_OFFSET: number = 5;
 
-  static createMaster(size: number = 1e6 * Uint8Array.BYTES_PER_ELEMENT, id: number = this.ID++) {
-    const sharedBuffer: SharedBufferStream = new SharedBufferStream(new Uint8Array(createSharedBuffer(id, size, true)));
-    sharedBuffer.packetId = -1;
-    // sharedBuffer.size = 0;
-    return sharedBuffer;
-  }
+  public bufferView: Uint8Array | null;
 
-  static create(size: number = 1e6 * Uint8Array.BYTES_PER_ELEMENT, id: number = this.ID++) {
-    return new SharedBufferStream(new Uint8Array(createSharedBuffer(id, size)));
-  }
+  protected _packetId: number;
 
-  public buffer: Uint8Array;
-  protected packetId: number;
-
-  constructor(buffer: Uint8Array) {
-    this.buffer = buffer;
-    this.packetId = 0;
+  constructor(key: string, size: number) {
+    super(key, size);
+    this._updateBufferView();
+    this._packetId = 0;
   }
 
   get readable(): boolean {
-    return this.buffer[SharedBufferStream.PACKET_ID_REG] !== this.packetId;
+    return this.bufferView[SharedBufferStream.PACKET_ID_REG] !== this._packetId;
   }
 
   get size(): number {
     return (
-      this.buffer[SharedBufferStream.PACKET_SIZE_REG    ]
-      | (this.buffer[SharedBufferStream.PACKET_SIZE_REG + 1] << 8)
-      | (this.buffer[SharedBufferStream.PACKET_SIZE_REG + 2] << 16)
-      | (this.buffer[SharedBufferStream.PACKET_SIZE_REG + 3] << 24)
+      this.bufferView[SharedBufferStream.PACKET_SIZE_REG    ]
+      | (this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 1] << 8)
+      | (this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 2] << 16)
+      | (this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 3] << 24)
     ) >>> 0;
   }
 
   set size(value: number) {
-    this.buffer[SharedBufferStream.PACKET_SIZE_REG    ] = value;
-    this.buffer[SharedBufferStream.PACKET_SIZE_REG + 1] = value >> 8;
-    this.buffer[SharedBufferStream.PACKET_SIZE_REG + 2] = value >> 16;
-    this.buffer[SharedBufferStream.PACKET_SIZE_REG + 3] = value >> 24;
+    this.bufferView[SharedBufferStream.PACKET_SIZE_REG    ] = value;
+    this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 1] = value >> 8;
+    this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 2] = value >> 16;
+    this.bufferView[SharedBufferStream.PACKET_SIZE_REG + 3] = value >> 24;
   }
 
   get maxSize(): number {
-    return this.buffer.length - SharedBufferStream.START_OFFSET;
+    return this.bufferView.length - SharedBufferStream.START_OFFSET;
   }
 
   get data(): Uint8Array {
-    return this.buffer.subarray(SharedBufferStream.START_OFFSET, SharedBufferStream.START_OFFSET + this.size);
+    return this.bufferView.subarray(SharedBufferStream.START_OFFSET, SharedBufferStream.START_OFFSET + this.size);
   }
 
   set data(value: Uint8Array) {
     this.size = value.length;
-    this.buffer.set(value, SharedBufferStream.START_OFFSET);
+    this.bufferView.set(value, SharedBufferStream.START_OFFSET);
+  }
+
+  open(initialize?: boolean): void {
+    super.open(initialize);
+    this._updateBufferView();
+  }
+
+  close(): void {
+    super.close();
+    this._updateBufferView();
   }
 
   receive(): void {
-    this.packetId = this.buffer[SharedBufferStream.PACKET_ID_REG];
+    this._packetId = this.bufferView[SharedBufferStream.PACKET_ID_REG];
   }
 
   send(): void {
-    this.packetId = (this.packetId + 1) % 256;
-    this.buffer[SharedBufferStream.PACKET_ID_REG] = this.packetId;
+    this._packetId = (this._packetId + 1) % 256;
+    this.bufferView[SharedBufferStream.PACKET_ID_REG] = this._packetId;
+  }
+
+  protected _updateBufferView(): void {
+    const buffer: ArrayBuffer = this.buffer;
+    if (buffer === null) {
+      this.bufferView = null;
+    } else {
+      this.bufferView = new Uint8Array(buffer);
+    }
   }
 }

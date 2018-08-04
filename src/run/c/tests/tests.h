@@ -176,8 +176,8 @@ void test() {
 //  testCommands();
 //  testAnswer();
 //  testAnswers();
-//  testCommandsExecutor();
-  testSharedBuffer();
+  testCommandsExecutor();
+//  testSharedBuffer();
 }
 
 

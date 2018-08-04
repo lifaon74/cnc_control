@@ -3,7 +3,9 @@ import * as $fs from 'fs-extra';
 import * as $path from 'path';
 import { Float } from '../classes/lib/Float';
 
-
+export interface GCODECommandToOptions {
+  comments?: boolean;
+}
 
 export class GCODECommand {
   static GCodeLineRegExp: RegExp = /^([^;]*)(?:;(.*)$|$)/;
@@ -13,23 +15,25 @@ export class GCODECommand {
   static fromString(gcodeLine: string): GCODECommand {
     const command: GCODECommand = new GCODECommand();
 
-    const match = GCODECommand.GCodeLineRegExp.exec(gcodeLine.trim());
-    if(match) {
-      if(match[1]) {
+    const match: RegExpExecArray | null = GCODECommand.GCodeLineRegExp.exec(gcodeLine.trim());
+    if (match !== null) {
+      if (match[1]) {
         const split = match[1].split(' ');
         command.command = split[0].trim();
         command.params = {};
         let param: string;
-        for(let i = 1; i < split.length; i++) {
+        for (let i = 1, l = split.length; i < l; i++) {
           param = split[i].trim();
-          if(param) {
-            const paramMatch = GCODECommand.GCodeParamRegExp.exec(param);
-            if(paramMatch) command.params[paramMatch[1].toLowerCase()] = parseFloat(paramMatch[2]);
+          if (param !== '') {
+            const paramMatch: RegExpExecArray | null = GCODECommand.GCodeParamRegExp.exec(param);
+            if (paramMatch !== null) {
+              command.params[paramMatch[1].toLowerCase()] = parseFloat(paramMatch[2]);
+            }
           }
         }
       }
 
-      if(match[2]) {
+      if (match[2]) {
         command.comment = match[2].trim();
       }
     }
@@ -37,38 +41,98 @@ export class GCODECommand {
     return command;
   }
 
+  public command: string;
+  public params: { [key: string]: number };
+  public comment: string;
+
   constructor(
-    public command: string = '',
-    public params: { [key: string]: number } = {},
-    public comment: string = ''
-  ) {}
+    command: string = '',
+    params: { [key: string]: number } = {},
+    comment: string = ''
+  ) {
+    this.command = command;
+    this.params = params;
+    this.comment = comment;
+  }
 
-  isEmpty() {
-    if((this.command !== '') || (this.comment !== '')) {
+  // get commandEnum(): number {
+  //   return ['G0', 'G1'].indexOf(this.command);
+  // }
+
+  isEmpty(): boolean {
+    if ((this.command !== '') || (this.comment !== '')) {
       return false;
     }
 
-    for(const key in this.params) {
+    for (const key in this.params) {
       return false;
     }
 
-    return true
+    return true;
   }
 
   toString(precision: number = GCODECommand.precision): string {
     let commandLine: string = '';
-    if(this.command) commandLine += this.command;
-    for(const key in this.params) {
-      if(commandLine !== '') commandLine += ' ';
+    if (this.command) {
+      commandLine += this.command;
+    }
+
+    for (const key in this.params) {
+      if (commandLine !== '') {
+        commandLine += ' ';
+      }
       commandLine += key.toUpperCase() + Float.toString(this.params[key], precision);
     }
 
-    if(this.comment) {
-      if(commandLine !== '') commandLine += ' ';
+    if (this.comment) {
+      if (commandLine !== '') {
+        commandLine += ' ';
+      }
       commandLine += '; ' + this.comment;
     }
 
     return commandLine;
+  }
+
+  //experimental, should use the command encoder instead
+  toBinary(buffer: Uint8Array, index: number = 0, options: GCODECommandToOptions = {}): number {
+    // if (!this.comment)
+    if (this.command) {
+      switch (this.command) {
+        case 'G0':
+        case 'G1':
+          buffer[index++] = 0;
+          let axisNames: string[] = ['X', 'Y', 'Z', 'E'];
+          const axisIndex: number = index;
+          index++;
+          axisNames.forEach((axis: string, i: number) => {
+            if (this.params[axis] === void 0) {
+              axis = axis.toLowerCase();
+            }
+
+            if (this.params[axis] !== void 0) {
+              buffer.set(new Uint8Array(new Float32Array([this.params[axis]]).buffer), index);
+              index += 4;
+              buffer[axisIndex] |= 1 << i;
+            }
+          });
+          break;
+        default:
+          buffer[index++] = 255;
+          const text: Uint8Array = new TextEncoder().encode(this.command);
+          buffer.set(text, index);
+          index += text.length;
+          break;
+      }
+    } else if (this.comment) {
+      if (options.comments) {
+        throw new Error('TODO'); // TODO
+      }
+    } else {
+      throw new Error(`Found empty CGODE command.`);
+    }
+
+    return index;
   }
 }
 
@@ -80,10 +144,10 @@ export class GCodeReaderStream extends Stream.Transform {
   }
 
   _transform(gcode: Buffer | string, encoding: string, callback: () => void) {
-    if(gcode instanceof Buffer) {
+    if (gcode instanceof Buffer) {
       this.parseGCODE(gcode.toString());
       callback();
-    } else if(typeof gcode === 'string') {
+    } else if (typeof gcode === 'string') {
       this.parseGCODE(gcode);
       callback();
     } else {
@@ -95,20 +159,20 @@ export class GCodeReaderStream extends Stream.Transform {
   protected _flush(callback: () => void) {
     const commands: GCODECommand[] = GCODEHelper.parse(this.gcode);
     this.gcode = '';
-    if(commands.length > 0) this.push(commands);
+    if (commands.length > 0) this.push(commands);
   }
 
   private parseGCODE(gcode: string) {
     this.gcode += gcode.replace('\r', '');
     let i = this.gcode.length - 1;
-    for(;i >= 0; i--) {
-      if(this.gcode[i] === '\n') {
+    for (; i >= 0; i--) {
+      if (this.gcode[i] === '\n') {
         break;
       }
     }
     const commands: GCODECommand[] = GCODEHelper.parse(this.gcode.slice(0, i));
     this.gcode = this.gcode.slice(i, this.gcode.length);
-    if(commands.length > 0) this.push(commands);
+    if (commands.length > 0) this.push(commands);
   }
 
 }
@@ -144,9 +208,9 @@ export class GCodeWriterStream extends Stream.Transform {
   }
 
   _transform(commands: GCODECommand[], encoding: string, callback: () => void) {
-    if(Array.isArray(commands)) {
+    if (Array.isArray(commands)) {
       const gcode: string = GCODEHelper.stringify(commands);
-      if(gcode) this.push(gcode + '\n');
+      if (gcode) this.push(gcode + '\n');
       callback();
     } else {
       this.emit('error', new Error('Invalid data : expected GCODECommand[]'));
@@ -189,7 +253,7 @@ export class GCODEHelper {
     const commands: GCODECommand[] = [];
     gcodeLines.forEach((gcodeLine: string) => {
       const command: GCODECommand = GCODECommand.fromString(gcodeLine);
-      if(!command.isEmpty()) {
+      if (!command.isEmpty()) {
         commands.push(command);
       }
     });
@@ -201,14 +265,13 @@ export class GCODEHelper {
   }
 
 
-
   static moveTo(commands: GCODECommand[], x: number, y: number, z?: number, e?: number, speed?: number): GCODECommand[] {
     const params: any = {};
-    if(x !== void 0) params.x = x;
-    if(y !== void 0) params.y = y;
-    if(z !== void 0) params.z = z;
-    if(e !== void 0) params.e = e;
-    if(speed !== void 0) params.f = speed;
+    if (x !== void 0) params.x = x;
+    if (y !== void 0) params.y = y;
+    if (z !== void 0) params.z = z;
+    if (e !== void 0) params.e = e;
+    if (speed !== void 0) params.f = speed;
     commands.push(new GCODECommand('G0', params));
     return commands;
   }
@@ -219,8 +282,8 @@ export class GCODEHelper {
     startAngle: number = 0, angle: number = Math.PI * 2,
     steps: number = 100
   ): GCODECommand[] {
-    if(steps > 1) {
-      for(let i = 0; i < steps; i++) {
+    if (steps > 1) {
+      for (let i = 0; i < steps; i++) {
         const a: number = startAngle - angle * i / (steps - 1);
         this.moveTo(
           commands,
@@ -281,7 +344,7 @@ export class GCODEHelper {
     const step: number = toolRadius * 2 - overlap;
     const start: number = y - halfSideMinusRadius + step;
     const end: number = y + halfSideMinusRadius;
-    const _x: number =  y - halfSideMinusRadius + step - toolRadius;
+    const _x: number = y - halfSideMinusRadius + step - toolRadius;
     let odd: boolean = false;
     for (let _y = start; _y < end; _y += step) {
       GCODEHelper.moveTo(commands, odd ? _x : -_x, _y);
@@ -291,7 +354,7 @@ export class GCODEHelper {
   }
 
   static pause(commands: GCODECommand[], ms: number): GCODECommand[] {
-    commands.push(new GCODECommand('G4', { p : ms }));
+    commands.push(new GCODECommand('G4', { p: ms }));
     return commands;
   }
 
@@ -316,8 +379,9 @@ function createSquare(path: string): Promise<void> {
 
 function createPlentySquare(path: string): Promise<void> {
   return GCodeWriterStream.toFile(path, (writer: Stream.Readable) => {
-    writer.push(GCODEHelper.plentySquare([], 0, 0, -2, 100, 3 / 2, 0.5));
-    writer.push(GCODEHelper.moveTo([], 0, 0, 2));
+    const z: number = 2;
+    writer.push(GCODEHelper.plentySquare([], 0, 0, -z, 100, 3 / 2, 0.5));
+    writer.push(GCODEHelper.moveTo([], 0, 0, z));
     writer.push(null);
   });
 }
@@ -326,7 +390,7 @@ function createTower(path: string): Promise<void> {
   return GCodeWriterStream.toFile(path, (writer: Stream.Readable) => {
     const layerHeight: number = 10;
     const layers: number = 10;
-    for(let i = 0; i < layers; i++) {
+    for (let i = 0; i < layers; i++) {
       writer.push([new GCODECommand('', {}, `layer ${i}`)]);
       writer.push(GCODEHelper.moveTo([], void 0, void 0, i * layerHeight));
       writer.push(GCODEHelper.square([], 0, 0, 100));
@@ -337,15 +401,25 @@ function createTower(path: string): Promise<void> {
   });
 }
 
+function testGCODECommandConversion(): void {
+  const cmd: GCODECommand = new GCODECommand('G0', { 'x': 10, 'z': 12.3 });
+  const buffer: Uint8Array = new Uint8Array(1e4);
+  let index: number = 0;
+  index = cmd.toBinary(buffer, index);
+  console.log(buffer.subarray(0, index));
+}
+
+// testGCODECommandConversion();
 
 // createCircle('../assets/circle.gcode');
 // createSquare('../assets/square.gcode');
 // createTower('../assets/tower.gcode');
-createPlentySquare('../assets/plenty_square.gcode');
+// createPlentySquare('../assets/plenty_square.gcode');
 
 // console.log(GCODEHelper.moveTo([], 10, 10)[0].toString());
 // console.log(GCODEHelper.arc([], 0, 0, 100, 1 / 4 * Math.PI, 3 / 4 * Math.PI, true, 100).map(a => a.toString()).join('\n'));
 
 // GCODEHelper.parseFilePromise('../assets/' + 'thin_tower' + '.gcode');
 // GCODEHelper.parseFile('../assets/' + 'fruit_200mm' + '.gcode');
+
 

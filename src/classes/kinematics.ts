@@ -1,12 +1,20 @@
 import { Float } from './lib/Float';
 import { Matrix } from './lib/Matrix';
 import { GCODECommand } from '../optimize/gcodeHelper';
-import * as $fs from "fs";
+import * as $fs from 'fs';
 
-export type ArrayBufferView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+export type ArrayBufferView =
+  Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array;
 
 export interface ArrayBufferViewConstructor {
-  new (size: number): ArrayBufferView;
+  new(size: number): ArrayBufferView;
 }
 
 // export class DynamicArrayBufferCollection {
@@ -42,7 +50,7 @@ export interface ArrayBufferViewConstructor {
 export class CorrelatedArrayBuffers {
 
   static sliceTypedArray(typedArray: any, start: number, end: number, copy: boolean = true) {
-    if((start < 0) || (end > typedArray.length)) {
+    if ((start < 0) || (end > typedArray.length)) {
       let array = new typedArray.constructor(end - start);
       array.set(typedArray.subarray(Math.max(0, start), Math.min(typedArray.length, end)), Math.abs(start));
       return array;
@@ -57,7 +65,7 @@ export class CorrelatedArrayBuffers {
     let roundedValue: number = 0;
     let delta: number;
 
-    for(let i = 0; i < source.length; i++) {
+    for (let i = 0; i < source.length; i++) {
       value += source[i];
       delta = Math.round(value - roundedValue);
       roundedValue += delta;
@@ -70,11 +78,11 @@ export class CorrelatedArrayBuffers {
   public _length: number;
 
   constructor(allocated: number = 0, buffers: { [key: string]: ArrayBufferViewConstructor } = {}) {
-    this._buffers  = {};
-    this._allocated   = allocated;
-    this._length      = 0;
+    this._buffers = {};
+    this._allocated = allocated;
+    this._length = 0;
 
-    for(const key in buffers) {
+    for (const key in buffers) {
       this.createBuffer(key, new (buffers[key])(this._allocated));
     }
   }
@@ -105,10 +113,10 @@ export class CorrelatedArrayBuffers {
   createBuffer(name: string, typedArray: ArrayBufferView): this {
     // this._buffers[name] = typedArray;
     Object.defineProperty(this._buffers, name, {
-      value : typedArray,
-      writable : true,
-      enumerable : true,
-      configurable : false
+      value: typedArray,
+      writable: true,
+      enumerable: true,
+      configurable: false
     });
     return this;
   }
@@ -123,7 +131,7 @@ export class CorrelatedArrayBuffers {
    * @returns {this}
    */
   require(size: number): this {
-    if(this._allocated < size) {
+    if (this._allocated < size) {
       this.allocate(size);
     }
     return this;
@@ -158,7 +166,7 @@ export class CorrelatedArrayBuffers {
   move(index_0: number, index_1: number): this {
     const bufferNames: string[] = this.bufferNames;
     let buffer: ArrayBufferView;
-    for(let i = 0, l = bufferNames.length; i <l; i++) {
+    for (let i = 0, l = bufferNames.length; i < l; i++) {
       buffer = this._buffers[bufferNames[i]];
       buffer[index_0] = buffer[index_1];
     }
@@ -171,9 +179,9 @@ export class CorrelatedArrayBuffers {
   protected transferBuffers(): void {
     const bufferNames: string[] = this.bufferNames;
     let bufferName: string;
-    for(let i = 0, l = bufferNames.length; i < l; i++) {
+    for (let i = 0, l = bufferNames.length; i < l; i++) {
       bufferName = bufferNames[i];
-      this._buffers[bufferName] = CorrelatedArrayBuffers.sliceTypedArray(this._buffers[bufferName], 0, this._allocated, false)
+      this._buffers[bufferName] = CorrelatedArrayBuffers.sliceTypedArray(this._buffers[bufferName], 0, this._allocated, false);
     }
   }
 
@@ -198,7 +206,7 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
 
   set length(length: number) {
     this._length = length;
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].length = length;
     }
     super.require(length);
@@ -210,7 +218,7 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
    * @returns {this}
    */
   require(size: number): this {
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].require(size);
     }
     return super.require(size);
@@ -222,7 +230,7 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
    * @returns {this}
    */
   allocate(size: number): this {
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].allocate(size);
     }
     return super.allocate(size);
@@ -233,7 +241,7 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
    * @returns {this}
    */
   compact(): this {
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].compact();
     }
     return super.compact();
@@ -246,7 +254,7 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
    * @returns {this}
    */
   move(index_0: number, index_1: number): this {
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].move(index_0, index_1);
     }
     return super.move(index_0, index_1);
@@ -254,7 +262,6 @@ export class CorrelatedArrayBuffersTree extends CorrelatedArrayBuffers {
 
 
 }
-
 
 
 /**
@@ -277,7 +284,7 @@ export class MovementsSequence extends CorrelatedArrayBuffers {
     let roundedValue: number = 0;
     let delta: number;
 
-    for(let i = 0; i < this._length; i++) {
+    for (let i = 0; i < this._length; i++) {
       value += this._buffers['values'][i];
       delta = Math.round(value - roundedValue);
       roundedValue += delta;
@@ -300,7 +307,7 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
   }
 
   roundValues(): void {
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       this.children[i].roundValues();
     }
   }
@@ -312,8 +319,8 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
    * @returns {boolean}
    */
   isNull(index: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    for(let i = 0, l = this.children.length; i < l; i++) {
-      if(!Float.isNull(this.children[i]._buffers['values'][index], precision)) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
+      if (!Float.isNull(this.children[i]._buffers['values'][index], precision)) {
         return false;
       }
     }
@@ -335,16 +342,16 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
     let value_0: number;
     let value_1: number;
 
-    for(let i = 0, l = this.children.length; i < l; i++) {
+    for (let i = 0, l = this.children.length; i < l; i++) {
       movesSequence = this.children[i];
       value_0 = Float.round(movesSequence._buffers['values'][index_0], precision);
       value_1 = Float.round(movesSequence._buffers['values'][index_1], precision);
-      if(Float.isNaN(f_0)) {
+      if (Float.isNaN(f_0)) {
         f_0 = value_0 / value_1;
         positive = value_1 > value_0;
       } else { // f_0 !== NaN
         f_1 = value_0 / value_1;
-        if(
+        if (
           !Float.isNaN(f_1) &&
           ((f_0 !== f_1) || ((value_1 > value_0) !== positive))
         ) {
@@ -360,15 +367,15 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
    * Removes unnecessary movements
    */
   reduce(): void {
-    if(this._length > 0) {
+    if (this._length > 0) {
       const length: number = this._length;
       let readIndex: number = 1;
       let writeIndex: number = 0;
-      for(; readIndex < length; readIndex++) {
-        if(!this.merge(writeIndex, readIndex)) {
+      for (; readIndex < length; readIndex++) {
+        if (!this.merge(writeIndex, readIndex)) {
           // readIndex cannot be merged in writeIndex
           writeIndex++; // go to next movement
-          if(writeIndex !== readIndex) {
+          if (writeIndex !== readIndex) {
             this.move(writeIndex, readIndex); // write readIndex in writeIndex
           }
         }
@@ -388,9 +395,9 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
    * @returns {boolean}
    */
   merge(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    if(this.areCorrelated(index_0, index_1, precision)) {
+    if (this.areCorrelated(index_0, index_1, precision)) {
       let movesSequence: ConstrainedMovementsSequence;
-      for(let i = 0, l = this.children.length; i < l; i++) {
+      for (let i = 0, l = this.children.length; i < l; i++) {
         movesSequence = this.children[i];
         movesSequence._buffers['values'][index_0] += movesSequence._buffers['values'][index_1];
         // movesSequence._buffers.values[index_1] = 0; // => to force erase
@@ -406,8 +413,6 @@ export class SynchronizedMovementsSequence extends CorrelatedArrayBuffersTree {
     return this.areCollinear(index_0, index_1, precision);
   }
 }
-
-
 
 
 /**
@@ -428,14 +433,14 @@ export class ConstrainedMovementsSequence extends MovementsSequence {
    * DEBUG
    */
   toString(index: number = -1, type: string = 'value'): string {
-    if(index === -1) {
+    if (index === -1) {
       let str: string = '';
-      for(let i = 0, length = this.length; i < length; i++) {
+      for (let i = 0, length = this.length; i < length; i++) {
         str += this.toString(i, type) + '\n';
       }
       return str;
     } else {
-      switch(type) {
+      switch (type) {
         case 'limits':
           return '( ' + this._buffers['speedLimits'][index] + ', ' + this._buffers['accelerationLimits'][index] + ', ' + this._buffers['jerkLimits'][index] + ' )';
         case 'value':
@@ -466,14 +471,14 @@ export class ConstrainedNormalizedMovementSequence extends CorrelatedArrayBuffer
    * DEBUG
    */
   toString(index: number = -1, type: string = 'value'): string {
-    if(index === -1) {
+    if (index === -1) {
       let str: string = '';
-      for(let i = 0, length = this.length; i < length; i++) {
+      for (let i = 0, length = this.length; i < length; i++) {
         str += this.toString(i, type) + '\n';
       }
       return str;
     } else {
-      switch(type) {
+      switch (type) {
         case 'limits':
           return '( ' + this._buffers.speedLimits[index] + ', ' + this._buffers.accelerationLimits[index] + ' )';
         case 'speed':
@@ -500,7 +505,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       'indices': Uint32Array
     });
 
-    for(let i = 0; i < numberOfParallelMovements; i++) {
+    for (let i = 0; i < numberOfParallelMovements; i++) {
       this.children[i] = new ConstrainedMovementsSequence();
     }
   }
@@ -532,13 +537,13 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
 
     let move: ConstrainedMovementsSequence;
     let speedLimit: number, accelerationLimit: number, value: number;
-    for(let i = 0, l = this._length; i < l; i++) {
+    for (let i = 0, l = this._length; i < l; i++) {
       move = this.children[0];
       value = Math.abs(move._buffers['values'][i]);
       speedLimit = move._buffers['speedLimits'][i] / value;
       accelerationLimit = move._buffers['accelerationLimits'][i] / value;
 
-      for(let j = 1, childrenLength = this.children.length; j < childrenLength; j++) {
+      for (let j = 1, childrenLength = this.children.length; j < childrenLength; j++) {
         move = this.children[j];
         value = Math.abs(move._buffers['values'][i]);
         speedLimit = Math.min(speedLimit, move._buffers['speedLimits'][i] / value);
@@ -547,8 +552,8 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
 
       // movesSequence.initialSpeeds[i]       = NaN;
       // movesSequence.finalSpeeds[i]         = NaN;
-      movesSequence._buffers['speedLimits'][i]         = speedLimit;
-      movesSequence._buffers['accelerationLimits'][i]  = accelerationLimit;
+      movesSequence._buffers['speedLimits'][i] = speedLimit;
+      movesSequence._buffers['accelerationLimits'][i] = accelerationLimit;
     }
 
     return movesSequence;
@@ -573,8 +578,8 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
     const length: number = normalizedMovesSequence._length - 1;
     normalizedMovesSequence._buffers['initialSpeeds'][i] = 0; // constraints initialSpeed to 0
 
-    for(; i < length; i++) { // for each pair of movements
-      initialSpeed      = normalizedMovesSequence._buffers['initialSpeeds'][i];
+    for (; i < length; i++) { // for each pair of movements
+      initialSpeed = normalizedMovesSequence._buffers['initialSpeeds'][i];
       accelerationLimit = normalizedMovesSequence._buffers['accelerationLimits'][i];
 
       // computes final speed limit:
@@ -593,8 +598,8 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       // get max final and initial speeds
       solutions = matrix.solveStandardMaximizationProblem(matrix).getStandardMaximizationProblemSolutions();
 
-      normalizedMovesSequence._buffers['finalSpeeds'][i]        = solutions.values[0];
-      normalizedMovesSequence._buffers['initialSpeeds'][i + 1]  = solutions.values[1];
+      normalizedMovesSequence._buffers['finalSpeeds'][i] = solutions.values[0];
+      normalizedMovesSequence._buffers['initialSpeeds'][i + 1] = solutions.values[1];
     }
   }
 
@@ -614,7 +619,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
     let i: number = normalizedMovesSequence.length - 1;
     normalizedMovesSequence._buffers['finalSpeeds'][i] = 0;
 
-    for(; i > 0; i--) {
+    for (; i > 0; i--) {
       finalSpeed = normalizedMovesSequence._buffers['finalSpeeds'][i];
       accelerationLimit = normalizedMovesSequence._buffers['accelerationLimits'][i];
 
@@ -634,8 +639,8 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       // get max final and initial speeds
       solutions = matrix.solveStandardMaximizationProblem(matrix).getStandardMaximizationProblemSolutions();
 
-      normalizedMovesSequence._buffers['finalSpeeds'][i - 1]  = solutions.values[0];
-      normalizedMovesSequence._buffers['initialSpeeds'][i]    = solutions.values[1];
+      normalizedMovesSequence._buffers['finalSpeeds'][i - 1] = solutions.values[0];
+      normalizedMovesSequence._buffers['initialSpeeds'][i] = solutions.values[1];
     }
   }
 
@@ -651,7 +656,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
    *      => here 'abs' will be replaced by 2 rows instead:
    *        - (+value[index_0][i] * finalSpeed - value[index_1][i] * initialSpeed) < jerk[i]
    *        - (-value[index_0][i] * finalSpeed + value[index_1][i] * initialSpeed) < jerk[i]
- *        => this mean that the difference between final and initial speeds can't exceed jerk.
+   *        => this mean that the difference between final and initial speeds can't exceed jerk.
    *   set 2 maximum speeds: final and initial
    *
    * After solving the problem, the best final and initial speed will be returned
@@ -681,7 +686,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
     let jerkLimit: number;
     let value_0: number, value_1: number;
 
-    for(let i = 0, l = this.children.length; i < l; i++) { // for each axis
+    for (let i = 0, l = this.children.length; i < l; i++) { // for each axis
       movesSequence = this.children[i];
 
       jerkLimit = Math.min(
@@ -716,7 +721,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
     matrix.values[row] = -1;
     matrix.values[row + col_1] = -1;
 
-    for(let m = 0, l = matrix.m - 1; m < l; m++) {
+    for (let m = 0, l = matrix.m - 1; m < l; m++) {
       matrix.values[m + (m + 2) * matrix.m] = 1;
     }
 
@@ -745,7 +750,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
     let d0: number, d1: number, d2: number;
 
 
-    for(let i = 0, length = normalizedMovesSequence.length; i < length; i++) {
+    for (let i = 0, length = normalizedMovesSequence.length; i < length; i++) {
       index = this._buffers['indices'][i];
 
       initialSpeed = normalizedMovesSequence._buffers['initialSpeeds'][i];
@@ -756,10 +761,10 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       // first we compute the point were we accelerate as fast as possible and decelerate as fast as possible
       // ta, tb => time to reach junction peak of full acceleration and deceleration
       // ta for acceleration, tb for deceleration
-      ta =  (Math.sqrt(
-          (initialSpeed * initialSpeed + finalSpeed * finalSpeed) / 2 +
-          accelerationLimit /* * this.distance */
-        ) - initialSpeed) / accelerationLimit;
+      ta = (Math.sqrt(
+        (initialSpeed * initialSpeed + finalSpeed * finalSpeed) / 2 +
+        accelerationLimit /* * this.distance */
+      ) - initialSpeed) / accelerationLimit;
       tb = ta + (initialSpeed - finalSpeed) / accelerationLimit;
 
       // t0, t1, t2 => times of the 3 decomposed children
@@ -784,7 +789,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       // console.log('--');
 
       // acceleration
-      if(!Float.isNull(t0, precision)) {
+      if (!Float.isNull(t0, precision)) {
         // console.log('i', i, 'vi', initialSpeed, 'vf', finalSpeed, 'al', accelerationLimit);
 
         movementsSequence._buffers['indices'][movementsSequenceLength] = index;
@@ -792,7 +797,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
         movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = initialSpeed / d0;
         movementsSequence._buffers['accelerations'][movementsSequenceLength] = accelerationLimit / d0;
 
-        for(let j = 0, l = this.children.length; j < l; j++) {
+        for (let j = 0, l = this.children.length; j < l; j++) {
           movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d0;
         }
 
@@ -800,13 +805,13 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       }
 
       // linear
-      if(!Float.isNull(t1, precision)) {
+      if (!Float.isNull(t1, precision)) {
         movementsSequence._buffers['indices'][movementsSequenceLength] = index;
         movementsSequence._buffers['times'][movementsSequenceLength] = t1;
         movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d1;
         // movementsSequence.accelerations[movementsSequenceLength] = 0;
 
-        for(let j = 0, l = this.children.length; j < l; j++) {
+        for (let j = 0, l = this.children.length; j < l; j++) {
           movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d1;
         }
 
@@ -814,13 +819,13 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
       }
 
       // deceleration
-      if(!Float.isNull(t2, precision)) {
+      if (!Float.isNull(t2, precision)) {
         movementsSequence._buffers['indices'][movementsSequenceLength] = index;
         movementsSequence._buffers['times'][movementsSequenceLength] = t2;
         movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d2;
         movementsSequence._buffers['accelerations'][movementsSequenceLength] = -normalizedMovesSequence._buffers['accelerationLimits'][i] / d2;
 
-        for(let j = 0, l = this.children.length; j < l; j++) {
+        for (let j = 0, l = this.children.length; j < l; j++) {
           movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d2;
         }
 
@@ -837,18 +842,18 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
 
 
   areCorrelated(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    if(this.isNull(index_0) || this.isNull(index_1)) {
+    if (this.isNull(index_0) || this.isNull(index_1)) {
       return true;
     }
 
-    if(!this.areCollinear(index_0, index_1, precision)) {
+    if (!this.areCollinear(index_0, index_1, precision)) {
       return false;
     }
 
     let movesSequence: ConstrainedMovementsSequence;
-    for(let i = 0; i < this.children.length; i++) {
+    for (let i = 0; i < this.children.length; i++) {
       movesSequence = this.children[i];
-      if(
+      if (
         !Float.equals(movesSequence._buffers['speedLimits'][index_0], movesSequence._buffers['speedLimits'][index_1], precision) ||
         !Float.equals(movesSequence._buffers['accelerationLimits'][index_0], movesSequence._buffers['accelerationLimits'][index_1], precision) ||
         !Float.equals(movesSequence._buffers['jerkLimits'][index_0], movesSequence._buffers['jerkLimits'][index_1], precision)
@@ -861,14 +866,14 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
   }
 
   toString(index: number = -1, type: string = 'values'): string {
-    if(index === -1) {
+    if (index === -1) {
       let str: string = '';
-      for(let i = 0, length = Math.min(10, this.length); i < length; i++) {
+      for (let i = 0, length = Math.min(10, this.length); i < length; i++) {
         str += this.toString(i, type) + '\n\n---\n\n';
       }
       return str;
     } else {
-      switch(type) {
+      switch (type) {
         case 'values':
           // return (<ConstrainedMovementsSequence[]>this.children).map((move: ConstrainedMovementsSequence) => {
           //   return move.toString(index, 'value');
@@ -880,7 +885,7 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
                 'value: ' + move._buffers.values[index] +
                 ', speed: ' + move._buffers.speedLimits[index] +
                 ', accel: ' + move._buffers.accelerationLimits[index] +
-                ', jerk: ' +  move._buffers.jerkLimits[index] +
+                ', jerk: ' + move._buffers.jerkLimits[index] +
                 ' }';
             }).join(',\n');
         case 'limits':
@@ -894,7 +899,6 @@ export class ConstrainedSynchronizedMovementsSequence extends SynchronizedMoveme
   }
 
 }
-
 
 
 export class OptimizedMovementsSequence extends MovementsSequence {
@@ -916,17 +920,17 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
       'accelerations': Float64Array
     });
 
-    for(let i = 0; i < numberOfParallelMovements; i++) {
+    for (let i = 0; i < numberOfParallelMovements; i++) {
       this.children[i] = new OptimizedMovementsSequence();
     }
   }
 
   areCorrelated(index_0: number, index_1: number, precision: number = ConstrainedSynchronizedMovementsSequence.DEFAULT_PRECISION): boolean {
-    if(this.isNull(index_0) || this.isNull(index_1)) {
+    if (this.isNull(index_0) || this.isNull(index_1)) {
       return true;
     }
 
-    if(
+    if (
       !Float.equals(this._buffers['times'][index_0], this._buffers['times'][index_1], precision) ||
       !Float.equals(this._buffers['initialSpeeds'][index_0], this._buffers['initialSpeeds'][index_1], precision) ||
       !Float.equals(this._buffers['accelerations'][index_0], this._buffers['accelerations'][index_1], precision)
@@ -934,7 +938,7 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
       return false;
     }
 
-    if(!this.areCollinear(index_0, index_1, precision)) {
+    if (!this.areCollinear(index_0, index_1, precision)) {
       return false;
     }
 
@@ -947,8 +951,8 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
   toString(type: string = 'values', start: number = 0, end: number = this._length): string {
     let str: string = '';
 
-    for(let i = start, length = end; i < length; i++) {
-      switch(type) {
+    for (let i = start, length = end; i < length; i++) {
+      switch (type) {
         case 'values':
           str += '(' + this._buffers.indices[i] + ') ' + 'time: ' + this._buffers.times[i] + ' => ' +
             this.children.map((move: OptimizedMovementsSequence) => {
@@ -970,7 +974,7 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
               return '{ ' +
                 'value: ' + value +
                 ', computed: ' + computed * value +
-                ' }' + (Float.equals(computed, 1, 1e-9)? '' : '=>>>>>>>>[ERROR]');
+                ' }' + (Float.equals(computed, 1, 1e-9) ? '' : '=>>>>>>>>[ERROR]');
             }).join(', ');
           break;
       }
@@ -994,6 +998,11 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
           _gcodeCommands.push(gcodeCommands[gcodeCommandsIndex]);
         }
       }
+
+      if (gcodeCommandsIndex === index) {
+        _gcodeCommands.push(new GCODECommand(void 0, void 0, 'MOVE:' + gcodeCommands[index].toString()));
+      }
+
       gcodeCommandsIndex = index + 1;
 
       const params: any = {
@@ -1002,7 +1011,7 @@ export class OptimizedSynchronizedMovementsSequence extends SynchronizedMovement
         A: this._buffers['accelerations'][i],
       };
 
-      for(let j = 0; j < movesLength; j++) {
+      for (let j = 0; j < movesLength; j++) {
         const value: number = this.children[j]._buffers['values'][i];
         if (value !== 0) {
           params[axisNames[j]] = value;

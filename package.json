@@ -29,9 +29,9 @@
     "gulp-sourcemaps": "^2.6.0",
     "gulp-typescript": "latest",
     "gulp-util": "latest",
-    "typescript": "^2.6.1",
-    "vinyl-source-stream": "latest",
-    "nan": "latest"
+    "nan": "latest",
+    "typescript": "^3.0.1",
+    "vinyl-source-stream": "latest"
   },
   "dependencies": {
     "fs-extra": "^4.0.2"
