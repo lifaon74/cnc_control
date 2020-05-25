@@ -7,8 +7,8 @@ pids
 *.pid
 *.seed
 
-node_modules
-
+node_modules/
+dist/
 
 # Users Environment Variables
 .lock-wscript
@@ -20,8 +20,6 @@ node_modules
 .vscode
 *.iml
 
-dist
-
 
 # OS X trash files
 .DS_Store
@@ -32,4 +30,6 @@ dist
 .classpath
 /node/
 /target/
+
+.npmrc
 
