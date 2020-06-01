@@ -1,3 +1,5 @@
+import { debugStandardMaximizationProblem } from './helpers/simplex';
+import { debugStandardMaximizationProblemSolver } from './helpers/standard-maximization-problem';
 
 const MOTOR_STEPS = 200;
 const MICROSTEPS = 32;
@@ -147,11 +149,11 @@ export class MovementOptimizer {
 
     const initialSpeed: number = 0;
 
-    const finalSpeedLimit = Math.min(
-      normalizedMovesSequence._buffers['speedLimits'][i],
-      (accelerationLimit === 0) ?
-        initialSpeed : Math.sqrt(initialSpeed * initialSpeed + 2 * accelerationLimit)
-    );
+    // const finalSpeedLimit = Math.min(
+    //   normalizedMovesSequence._buffers['speedLimits'][i],
+    //   (accelerationLimit === 0) ?
+    //     initialSpeed : Math.sqrt(initialSpeed * initialSpeed + 2 * accelerationLimit)
+    // );
   }
 }
 
@@ -218,19 +220,22 @@ export class MovementOptimizer {
 
 
 export function runDebug() {
-  const defaultConstraint: IMovementConstraint = {
-    accelerationLimit: ACCELERATION_LIMIT,
-    speedLimit: SPEED_LIMIT,
-    jerkLimit: JERK_LIMIT,
-  };
+  // debugStandardMaximizationProblem();
+  debugStandardMaximizationProblemSolver();
 
-  const constraints: IMovementConstraint[] = [
-    defaultConstraint,
-    defaultConstraint,
-    defaultConstraint,
-  ];
-
-  const optimizer = new MovementOptimizer(constraints);
-
-  optimizer.add([10, 10, 10]);
+  // const defaultConstraint: IMovementConstraint = {
+  //   accelerationLimit: ACCELERATION_LIMIT,
+  //   speedLimit: SPEED_LIMIT,
+  //   jerkLimit: JERK_LIMIT,
+  // };
+  //
+  // const constraints: IMovementConstraint[] = [
+  //   defaultConstraint,
+  //   defaultConstraint,
+  //   defaultConstraint,
+  // ];
+  //
+  // const optimizer = new MovementOptimizer(constraints.length, constraints);
+  //
+  // optimizer.add([10, 10, 10]);
 }
