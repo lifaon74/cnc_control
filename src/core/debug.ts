@@ -1,5 +1,5 @@
-import { debugStandardMaximizationProblem } from './helpers/simplex';
 import { debugStandardMaximizationProblemSolver } from './helpers/standard-maximization-problem';
+import { TNumberArray } from './helpers/types';
 
 const MOTOR_STEPS = 200;
 const MICROSTEPS = 32;
@@ -112,7 +112,7 @@ export function MovementOptimizerGenerateMaximizationMatrix(
 /*---*/
 
 
-export type TOptimizedMovement = Float32Array; // [acceleration, velocity, ...distance[i]{i}]
+export type TOptimizedMovement = Float64Array; // [acceleration, velocity, ...distance[i]{i}]
 
 export interface IMovementConstraint {
   accelerationLimit: number;
@@ -126,23 +126,42 @@ export class MovementOptimizer {
 
   public readonly movements: TOptimizedMovement[];
 
+  protected values: Float64Array;
+  protected accelerationLimits: Float64Array;
+  protected speedLimits: Float64Array;
+  protected jerkLimits: Float64Array;
+
   constructor(
-    axisCount: number,
     constraints: IMovementConstraint[]
   ) {
-    this.axisCount = axisCount;
-    if (constraints.length !== this.axisCount) {
-      throw new Error(`constraints' length must be ${ this.axisCount }`)
-    }
+    this.axisCount = constraints.length;
+    // if (constraints.length !== this.axisCount) {
+    //   throw new Error(`constraints' length must be ${ this.axisCount }`)
+    // }
     this.constraints = constraints;
     this.movements = [];
   }
 
   /**
    * Adds a movement to optimize
-   * @param movement => [X, Y, Z, etc...]
+   *   movement => [X, Y, Z, etc...]
    */
-  add(movement: number[]): void {
+  add(
+    movement: TNumberArray,
+    constraints: IMovementConstraint[] = this.constraints
+  ): void {
+    let normalizedAccelerationLimit: number = Number.POSITIVE_INFINITY;
+    let normalizedSpeedLimit: number = Number.POSITIVE_INFINITY;
+
+    for (let i: number = 0; i < this.axisCount; i++) {
+      const constraint: IMovementConstraint = constraints[i];
+      const absoluteDistance: number = Math.abs(movement[i]);
+      normalizedAccelerationLimit = Math.min(normalizedAccelerationLimit, constraint.accelerationLimit / absoluteDistance);
+      normalizedSpeedLimit = Math.min(normalizedSpeedLimit, constraint.speedLimit / absoluteDistance);
+    }
+
+    console.log(normalizedAccelerationLimit, normalizedSpeedLimit);
+
     // 1) compute best initial and final speed
     //  a) compute best initial and final speed from first movement to last one, assuming fastest speed at the end of the movement
     //  b) compute best initial and final speed from last movement to first one, assuming fastest speed at the beginning of the movement
@@ -218,24 +237,26 @@ export class MovementOptimizer {
 // return matrix;
 // }
 
+export function debugMovementOptimizer() {
+  const defaultConstraint: IMovementConstraint = {
+    accelerationLimit: 1,
+    speedLimit: 1,
+    jerkLimit: 0.1,
+  };
+
+  const constraints: IMovementConstraint[] = [
+    defaultConstraint,
+    defaultConstraint,
+  ];
+
+  const optimizer = new MovementOptimizer(constraints);
+
+  optimizer.add([1, 2]);
+}
 
 export function runDebug() {
   // debugStandardMaximizationProblem();
-  debugStandardMaximizationProblemSolver();
+  // debugStandardMaximizationProblemSolver();
+  debugMovementOptimizer();
 
-  // const defaultConstraint: IMovementConstraint = {
-  //   accelerationLimit: ACCELERATION_LIMIT,
-  //   speedLimit: SPEED_LIMIT,
-  //   jerkLimit: JERK_LIMIT,
-  // };
-  //
-  // const constraints: IMovementConstraint[] = [
-  //   defaultConstraint,
-  //   defaultConstraint,
-  //   defaultConstraint,
-  // ];
-  //
-  // const optimizer = new MovementOptimizer(constraints.length, constraints);
-  //
-  // optimizer.add([10, 10, 10]);
 }

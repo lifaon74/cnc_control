@@ -13,7 +13,7 @@ export type TArrayBufferView =
   | Float64Array;
 
 
-export type TMatrixData = {
+export type TNumberArray = {
   readonly length: number;
   [n: number]: number;
 };

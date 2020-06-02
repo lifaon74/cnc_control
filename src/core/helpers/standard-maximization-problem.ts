@@ -1,4 +1,4 @@
-import { TArrayBufferView, TArrayLikeTypedConstructor, TMatrixData } from './types';
+import { TArrayBufferView, TArrayLikeTypedConstructor, TNumberArray } from './types';
 import { MatrixToString } from './math';
 
 
@@ -32,7 +32,7 @@ export function GetStandardMaximizationProblemMatrixConstraintCount(
 }
 
 
-export function CreateEmptyStandardMaximizationProblemMatrix<TMatrix extends TMatrixData>(
+export function CreateEmptyStandardMaximizationProblemMatrix<TMatrix extends TNumberArray>(
   ctor: TArrayLikeTypedConstructor<TMatrix>,
   variableCount: number,
   constraintCount: number,
@@ -45,7 +45,7 @@ export function CreateEmptyStandardMaximizationProblemMatrix<TMatrix extends TMa
 
 
 export function SetUpStandardMaximizationProblemMatrixSlackVariables(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
 ): void {
@@ -78,7 +78,7 @@ export function SetUpStandardMaximizationProblemMatrixSlackVariables(
 
 export function SetUpStandardMaximizationProblemMatrixMaximize(
   maximize: ArrayLike<number>,
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
 ): void {
   const maximizeLength: number = maximize.length;
@@ -106,7 +106,7 @@ export function VerifySetUpStandardMaximizationProblemMatrixMaximizeArguments(
 
 export function SetUpStandardMaximizationProblemMatrixConstraints(
   constraints: ArrayLike<number>[],
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
 ): void {
@@ -150,7 +150,7 @@ export function VerifySetUpStandardMaximizationProblemMatrixMaximizeConstraintsA
 export function SetUpStandardMaximizationProblemMatrix(
   maximize: ArrayLike<number>,
   constraints: ArrayLike<number>[],
-  matrix: TMatrixData,
+  matrix: TNumberArray,
 ): void {
   const rows: number = GetStandardMaximizationProblemMatrixRowCount(constraints.length);
   const columns: number = GetStandardMaximizationProblemMatrixColumnCount(maximize.length, constraints.length);
@@ -190,7 +190,7 @@ export function CreateStandardMaximizationProblemMatrix<TMatrix extends ArrayLik
 }
 
 export function FindStandardMaximizationProblemMatrixPivotColumn(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
 ): number {
@@ -218,7 +218,7 @@ export function FindStandardMaximizationProblemMatrixPivotColumn(
 }
 
 export function FindStandardMaximizationProblemMatrixPivotRow(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
   pivotColumn: number,
@@ -245,7 +245,7 @@ export function FindStandardMaximizationProblemMatrixPivotRow(
 }
 
 export function ApplyGaussianEliminationToStandardMaximizationProblemMatrix(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
   pivotRow: number,
@@ -279,7 +279,7 @@ export function ApplyGaussianEliminationToStandardMaximizationProblemMatrix(
 
 
 export function SolveStandardMaximizationProblemMatrixIteration(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
 ): boolean {
@@ -310,7 +310,7 @@ export function SolveStandardMaximizationProblemMatrixIteration(
 }
 
 export function SolveStandardMaximizationProblemMatrix(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   columns: number,
   maxIterations: number = rows * 100,
@@ -328,7 +328,7 @@ export function SolveStandardMaximizationProblemMatrix(
 
 
 export function GetResolvedStandardMaximizationProblemMatrixSolutionRow(
-  matrix: TMatrixData,
+  matrix: TNumberArray,
   rows: number,
   column: number, // INFO the index of the column
 ): number {
@@ -351,8 +351,8 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutionRow(
   return rowIndex;
 }
 
-export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput extends TMatrixData>(
-  matrix: TMatrixData,
+export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput extends TNumberArray>(
+  matrix: TNumberArray,
   rows: number,
   columns: number,
   output: TOutput,
@@ -372,7 +372,7 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput ex
 
 export function VerifyResolvedStandardMaximizationProblemMatrixOutputArgument(
   variableCount: number,
-  output: TMatrixData,
+  output: TNumberArray,
 ): void {
   if (output.length !== variableCount) {
     throw new Error(`output must have a size of ${ variableCount }`);
@@ -380,8 +380,8 @@ export function VerifyResolvedStandardMaximizationProblemMatrixOutputArgument(
 }
 
 
-export function SolveAndGetSolutionsOfStandardMaximizationProblemMatrix<TOutput extends TMatrixData>(
-  matrix: TMatrixData,
+export function SolveAndGetSolutionsOfStandardMaximizationProblemMatrix<TOutput extends TNumberArray>(
+  matrix: TNumberArray,
   rows: number,
   columns: number,
   output: TOutput,
@@ -390,8 +390,8 @@ export function SolveAndGetSolutionsOfStandardMaximizationProblemMatrix<TOutput 
   return GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput>(matrix, rows, columns, output);
 }
 
-/*-------------------------*/
 
+/*-------------------------*/
 
 export class StandardMaximizationProblemSolver {
   static create(
@@ -443,6 +443,7 @@ export class StandardMaximizationProblemSolver {
   }
 }
 
+/*---*/
 
 export function debugStandardMaximizationProblemSolver(): void {
 
