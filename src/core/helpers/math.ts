@@ -8,7 +8,7 @@ export function FloatEquals(
   return Math.abs(a - b) < epsilon;
 }
 
-export function MatrixToString(matrix: TNumberArray, columnCount: number, rowCount: number, precision: number = -1): string {
+export function MatrixToString(matrix: TNumberArray, rowCount: number, columnCount: number, precision: number = -1): string {
   const _matrix: string[] = Array.from(matrix, (value: number) => {
     return (precision <= 0)
       ? value.toString(10)

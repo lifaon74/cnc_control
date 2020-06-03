@@ -1,4 +1,4 @@
-import { TArrayBufferView, TArrayLikeTypedConstructor, TNumberArray } from './types';
+import { TArrayLikeTypedConstructor, TNumberArray } from './types';
 import { MatrixToString } from './math';
 
 
@@ -317,8 +317,8 @@ export function SolveStandardMaximizationProblemMatrix(
 ): void {
 
   let i: number = 0;
-  while((i++ < maxIterations) && !SolveStandardMaximizationProblemMatrixIteration(matrix, rows, columns)) {
-    // console.log(MatrixToString(matrix, columns, rows));
+  while ((i++ < maxIterations) && !SolveStandardMaximizationProblemMatrixIteration(matrix, rows, columns)) {
+    // console.log(MatrixToString(matrix, rows, columns));
   }
 
   if (i >= maxIterations) {
@@ -335,16 +335,16 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutionRow(
   const lastRowIndex: number = rows - 1;
   const columnIndex: number = column * rows;
   let rowIndex: number = -1;
-  for(let row: number = 0; row < lastRowIndex; row++) {
+  for (let row: number = 0; row < lastRowIndex; row++) {
     const value: number = matrix[columnIndex + row];
-    if(value === 1) {
-      if(rowIndex === -1) {
+    if (value === 1) {
+      if (rowIndex === -1) {
         rowIndex = row;
       } else {
         rowIndex = -1;
         break;
       }
-    } else if(value !== 0) {
+    } else if (value !== 0) {
       break;
     }
   }
@@ -465,7 +465,7 @@ export function debugStandardMaximizationProblemSolver(): void {
   );
 
 
-  console.log(MatrixToString(solver.matrix, solver.columns, solver.rows));
+  console.log(MatrixToString(solver.matrix, solver.rows, solver.columns));
   console.log(solver.solve());
-  console.log(MatrixToString(solver.matrix, solver.columns, solver.rows));
+  console.log(MatrixToString(solver.matrix, solver.rows, solver.columns));
 }
