@@ -3,7 +3,7 @@ import {
   SetUpStandardMaximizationProblemMatrixSlackVariables, SolveAndGetSolutionsOfStandardMaximizationProblemMatrix
 } from './helpers/standard-maximization-problem';
 import { TArrayLikeTypedConstructor, TNumberArray } from './helpers/types';
-import { MatrixToString } from './helpers/math';
+import { FloatIsNull, MatrixToString } from './helpers/math';
 // import { CyclicTypedVectorArray } from './classes/cyclic/CyclicTypedVectorArray';
 import { debugCyclicRange } from './classes/cyclic/CyclicRange';
 import { CyclicTypedVectorArray } from './classes/cyclic/CyclicTypedVectorArray';
@@ -29,7 +29,7 @@ export class DynamicTypedArrayCollection<ArrayBufferView> {
 
 /*------------------------------------------------------------*/
 
-// [acceleration, velocity, ...distance[i]{i}]
+// [id, acceleration, velocity, ...distance[i]{i}]
 export class OptimizedMovementList extends CyclicTypedVectorArray<Float64Array> {
   public readonly axisCount: number;
 
@@ -37,7 +37,7 @@ export class OptimizedMovementList extends CyclicTypedVectorArray<Float64Array> 
     axisCount: number,
     size?: number
   ) {
-    const vectorLength: number = 2 + axisCount
+    const vectorLength: number = 3 + axisCount
     super(
       new Float64Array((size === void 0) ? (vectorLength * 1e6) : size),
       vectorLength
@@ -130,14 +130,18 @@ export function FillMovementMaximizationMatrix(
 }
 
 
-
 export function DecomposeMovement(
+  movementId: number,
+  movement: TNumberArray,
   normalizedStartSpeed: number,
   normalizedEndSpeed: number,
   normalizedSpeedLimit: number,
   normalizedAccelerationLimit: number,
+  movementList: OptimizedMovementList,
 ): void {
-  // a decomposed movement have the following phases: acceleration, constant speed, deceleration
+  const axisCount: number = movement.length;
+
+  // a decomposed movement have the following phases: acceleration, linear (constant speed), deceleration
 
   // 1) compute the point were we accelerate as fast as possible and decelerate as fast as possible
 
@@ -170,162 +174,53 @@ export function DecomposeMovement(
   // compute the max achieved speed
   const normalizedMaxSpeed: number = normalizedAccelerationLimit * t0 + normalizedStartSpeed;
 
-  // d0, d1, d2 => distances of the 3 decomposed children
+  // d0, d1, d2 => distances (normalized) of the 3 decomposed children
   const d0: number = (0.5 * normalizedAccelerationLimit * t0 * t0) + (normalizedStartSpeed * t0);
   const d2: number = (0.5 * normalizedAccelerationLimit * t2 * t2) + (normalizedEndSpeed * t2);
   const d1: number = 1 - d0 - d2;
 
+  // console.log('d0', d0, 'd1', d1, 'd2', d2);
+
   const t1: number = d1 / normalizedMaxSpeed;
 
-  //     // acceleration
-//     if (!Float.isNull(t0, precision)) {
-//       // console.log('i', i, 'vi', initialSpeed, 'vf', finalSpeed, 'al', accelerationLimit);
-//
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t0;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = initialSpeed / d0;
-//       movementsSequence._buffers['accelerations'][movementsSequenceLength] = accelerationLimit / d0;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d0;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
-//
-//     // linear
-//     if (!Float.isNull(t1, precision)) {
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t1;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d1;
-//       // movementsSequence.accelerations[movementsSequenceLength] = 0;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d1;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
-//
-//     // deceleration
-//     if (!Float.isNull(t2, precision)) {
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t2;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d2;
-//       movementsSequence._buffers['accelerations'][movementsSequenceLength] = -normalizedMovesSequence._buffers['accelerationLimits'][i] / d2;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d2;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
+  // console.log('t0', t0, 't1', t1, 't2', t2);
 
+  // acceleration
+  if (!FloatIsNull(t0)) {
+    let index: number = movementList.range.start;
+    movementList.range.shiftEnd(movementList.vectorLength);
+    movementList.array[index++] = movementId;
+    movementList.array[index++] = normalizedAccelerationLimit / d0;
+    movementList.array[index++] = normalizedSpeedLimit / d0;
+    for (let i: number = 0; i < axisCount; i++) {
+      movementList.array[index++] = movement[i] * d0;
+    }
+  }
+
+  // linear
+  if (!FloatIsNull(t1)) {
+    let index: number = movementList.range.end;
+    movementList.range.shiftEnd(movementList.vectorLength);
+    movementList.array[index++] = movementId;
+    movementList.array[index++] = 0;
+    movementList.array[index++] = normalizedMaxSpeed / d1;
+    for (let i: number = 0; i < axisCount; i++) {
+      movementList.array[index++] = movement[i] * d1;
+    }
+  }
+
+  // deceleration
+  if (!FloatIsNull(t2)) {
+    let index: number = movementList.range.end;
+    movementList.range.shiftEnd(movementList.vectorLength);
+    movementList.array[index++] = movementId;
+    movementList.array[index++] = -normalizedAccelerationLimit / d0;
+    movementList.array[index++] = normalizedMaxSpeed / d2;
+    for (let i: number = 0; i < axisCount; i++) {
+      movementList.array[index++] = movement[i] * d2;
+    }
+  }
 }
-
-// private _decompose(normalizedMovesSequence: ConstrainedNormalizedMovementSequence, precision: number = 1e-12): OptimizedSynchronizedMovementsSequence {
-//   const movementsSequence: OptimizedSynchronizedMovementsSequence = new OptimizedSynchronizedMovementsSequence(this.children.length);
-//   movementsSequence.require(normalizedMovesSequence.length * 3); // each movement could be split in 3 moves at max
-//   let movementsSequenceLength: number = 0;
-//
-//   let index: number;
-//   let initialSpeed: number, finalSpeed: number;
-//   let speedLimit: number, accelerationLimit: number;
-//
-//   let ta: number, tb: number, t0: number, t1: number, t2: number;
-//   let v0_max: number;
-//   let d0: number, d1: number, d2: number;
-//
-//
-//   for (let i = 0, length = normalizedMovesSequence.length; i < length; i++) {
-//     index = this._buffers['indices'][i];
-//
-//     initialSpeed = normalizedMovesSequence._buffers['initialSpeeds'][i];
-//     finalSpeed = normalizedMovesSequence._buffers['finalSpeeds'][i];
-//     speedLimit = normalizedMovesSequence._buffers['speedLimits'][i];
-//     accelerationLimit = normalizedMovesSequence._buffers['accelerationLimits'][i];
-//
-//     // first we compute the point were we accelerate as fast as possible and decelerate as fast as possible
-//     // ta, tb => time to reach junction peak of full acceleration and deceleration
-//     // ta for acceleration, tb for deceleration
-//     ta = (Math.sqrt(
-//       (initialSpeed * initialSpeed + finalSpeed * finalSpeed) / 2 +
-//       accelerationLimit /* * this.distance */
-//     ) - initialSpeed) / accelerationLimit;
-//     tb = ta + (initialSpeed - finalSpeed) / accelerationLimit;
-//
-//     // t0, t1, t2 => times of the 3 decomposed children
-//     t0 = Math.min(ta, (speedLimit - initialSpeed) / accelerationLimit); // get full acceleration time according to the speed limit
-//     t2 = Math.min(tb, (speedLimit - finalSpeed) / accelerationLimit); // get full deceleration time according to the speed limit
-//
-//     // max achieved speed
-//     v0_max = accelerationLimit * t0 + initialSpeed;
-//     // v1_max = this.accelerationLimit * t2 + this.finalSpeed;
-//
-//     // d0, d1, d2 => distances of the 3 decomposed children
-//     d0 = 0.5 * accelerationLimit * t0 * t0 + initialSpeed * t0;
-//     d2 = 0.5 * accelerationLimit * t2 * t2 + finalSpeed * t2;
-//     d1 = 1 - d0 - d2;
-//
-//     t1 = d1 / v0_max;
-//
-//
-//     // console.log('t=>', t0, t1, t2, ta, tb);
-//     // // console.log('v=>', v0_max, v1_max);
-//     // console.log('d=>', d0, d1, d2);
-//     // console.log('--');
-//
-//     // acceleration
-//     if (!Float.isNull(t0, precision)) {
-//       // console.log('i', i, 'vi', initialSpeed, 'vf', finalSpeed, 'al', accelerationLimit);
-//
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t0;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = initialSpeed / d0;
-//       movementsSequence._buffers['accelerations'][movementsSequenceLength] = accelerationLimit / d0;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d0;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
-//
-//     // linear
-//     if (!Float.isNull(t1, precision)) {
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t1;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d1;
-//       // movementsSequence.accelerations[movementsSequenceLength] = 0;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d1;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
-//
-//     // deceleration
-//     if (!Float.isNull(t2, precision)) {
-//       movementsSequence._buffers['indices'][movementsSequenceLength] = index;
-//       movementsSequence._buffers['times'][movementsSequenceLength] = t2;
-//       movementsSequence._buffers['initialSpeeds'][movementsSequenceLength] = v0_max / d2;
-//       movementsSequence._buffers['accelerations'][movementsSequenceLength] = -normalizedMovesSequence._buffers['accelerationLimits'][i] / d2;
-//
-//       for (let j = 0, l = this.children.length; j < l; j++) {
-//         movementsSequence.children[j]._buffers['values'][movementsSequenceLength] = this.children[j]._buffers['values'][i] * d2;
-//       }
-//
-//       movementsSequenceLength++;
-//     }
-//
-//   }
-//
-//   movementsSequence.length = movementsSequenceLength;
-//   // console.log(movementsSequence.toString());
-//
-//   return movementsSequence;
-// }
 
 
 /*---*/
@@ -443,6 +338,25 @@ export class MovementOptimizer {
 
     // normalizedMovesSequence._buffers['finalSpeeds'][i] = solutions.values[0];
     // normalizedMovesSequence._buffers['initialSpeeds'][i + 1] = solutions.values[1];
+
+    // movement: TNumberArray,
+    //   normalizedStartSpeed: number,
+    //   normalizedEndSpeed: number,
+    //   normalizedSpeedLimit: number,
+    //   normalizedAccelerationLimit: number,
+    //   movementList: OptimizedMovementList,
+
+    DecomposeMovement(
+      0,
+      movement,
+      0,
+      0,
+      1,
+      1,
+      this.optimizedMovements,
+    );
+
+
   }
 }
 
@@ -527,8 +441,8 @@ export function debugMovementOptimizer() {
 export function runDebug() {
   // debugStandardMaximizationProblem();
   // debugStandardMaximizationProblemSolver();
-  // debugMovementOptimizer();
+  debugMovementOptimizer();
   // debugCyclicIndex();
-  debugCyclicRange();
+  // debugCyclicRange();
 
 }

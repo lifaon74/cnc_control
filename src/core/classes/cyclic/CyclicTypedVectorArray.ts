@@ -32,13 +32,13 @@ export class CyclicTypedVectorArray<TArray extends TArrayBufferView> {
     }
   }
 
-  write(input: TArray, force: boolean = false): void {
+  write(input: TArray): void {
     if (input.length === this.vectorLength) {
-      const index: number = this.range.start;
-      if (this.readable() === 0) {
-        this.range.shiftEnd(this.vectorLength);
-      }
-      this.range.shiftStart(this.vectorLength);
+      const index: number = this.range.end;
+      // if (this.readable() === 0) {
+      //   this.range.shiftStart(this.vectorLength);
+      // }
+      this.range.shiftEnd(this.vectorLength);
       this.array.set(input, index);
     } else {
       throw new Error(`Expected an input with length: ${ this.vectorLength }`);
