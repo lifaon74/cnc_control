@@ -15,7 +15,7 @@ const STEPS_PER_TURN = 1000;
 
 
 const ACCELERATION_LIMIT = STEPS_PER_TURN / (1 / 1);
-const SPEED_LIMIT = STEPS_PER_TURN / (1 / 2); // 1 turn / s | max 6.25
+const VELOCITY_LIMIT = STEPS_PER_TURN / (1 / 2); // 1 turn / s | max 6.25
 const JERK_LIMIT = STEPS_PER_TURN / (16 / 1) * 0;
 
 
@@ -29,7 +29,7 @@ export class DynamicTypedArrayCollection<ArrayBufferView> {
 
 /*------------------------------------------------------------*/
 
-// [id, acceleration, velocity, ...distance[i]{i}]
+// [id, normalizedAcceleration, normalizedVelocity, ...distance[i]{i}]
 export class OptimizedMovementList extends CyclicTypedVectorArray<Float64Array> {
   public readonly axisCount: number;
 
@@ -44,9 +44,62 @@ export class OptimizedMovementList extends CyclicTypedVectorArray<Float64Array> 
     );
     this.axisCount = axisCount;
   }
+
+  writeMovement(
+    id: number,
+    normalizedAcceleration: number,
+    normalizedVelocity: number,
+    movement: TNumberArray,
+  ): void {
+    let index: number = this.range.end;
+    this.range.shiftEnd(this.vectorLength);
+    this.array[index++] = id;
+    this.array[index++] = normalizedAcceleration;
+    this.array[index++] = normalizedVelocity;
+    for (let i: number = 0, l = this.axisCount; i < l; i++) {
+      this.array[index++] = movement[i];
+    }
+  }
 }
 
+/*
+[
+  id,
+  // normalizedAccelerationLimit,
+  // normalizedVelocityLimit,
+  normalizedStartVelocityAToB,
+  normalizedEndVelocityAToB,
+  normalizedStartVelocityBToA,
+  normalizedEndVelocityBToA,
+  ...jerkLimit[i]{i}
+  ...distance[i]{i}
+]
+*/
+let MOVEMENT_OFFSET: number = 0;
+export const MOVEMENT_ID_OFFSET = MOVEMENT_OFFSET++;
+// export const MOVEMENT_NORMALIZED_ACCELERATION_LIMIT_OFFSET = MOVEMENT_OFFSET++;
+// export const MOVEMENT_NORMALIZED_VELOCITY_LIMIT_OFFSET = MOVEMENT_OFFSET++;
+// export const MOVEMENT_NORMALIZED_JERK_LIMIT_OFFSET = MOVEMENT_OFFSET++;
+export const MOVEMENT_NORMALIZED_START_VELOCITY_LIMIT_A_TO_B_OFFSET = MOVEMENT_OFFSET++;
+export const MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_A_TO_B_OFFSET = MOVEMENT_OFFSET++;
+export const MOVEMENT_NORMALIZED_START_VELOCITY_LIMIT_B_TO_A_OFFSET = MOVEMENT_OFFSET++;
+export const MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_B_TO_A_OFFSET = MOVEMENT_OFFSET++;
 
+export class MovementList extends CyclicTypedVectorArray<Float64Array> {
+  public readonly axisCount: number;
+
+  constructor(
+    axisCount: number,
+    size?: number
+  ) {
+    const vectorLength: number = MOVEMENT_OFFSET + axisCount
+    super(
+      new Float64Array((size === void 0) ? (vectorLength * 1e6) : size),
+      vectorLength
+    );
+    this.axisCount = axisCount;
+  }
+}
 
 
 export function MovementOptimizerCreateMaximizationMatrix<TMatrix extends TNumberArray>(
@@ -54,7 +107,7 @@ export function MovementOptimizerCreateMaximizationMatrix<TMatrix extends TNumbe
   axisCount: number,
 ): [TMatrix, number, number] {
   const variableCount: number = 2;
-  const constraintCount: number = (axisCount * 2) /* jerk limits */ + 2 /* speed limits */;
+  const constraintCount: number = (axisCount * 2) /* jerk limits */ + 2 /* velocity limits */;
   const rows: number = GetStandardMaximizationProblemMatrixRowCount(constraintCount);
   const columns: number = GetStandardMaximizationProblemMatrixColumnCount(variableCount, constraintCount);
   return [
@@ -74,11 +127,11 @@ export function FillMovementMaximizationMatrix(
   movementB: TNumberArray,
   jerkLimitsA: TNumberArray,
   jerkLimitsB: TNumberArray,
-  normalizedSpeedLimitA: number,
-  normalizedSpeedLimitB: number,
+  normalizedVelocityLimitA: number,
+  normalizedVelocityLimitB: number,
 ): void {
-  // variables: (normalizedSpeedA, normalizedSpeedB)
-  // maximize: normalizedSpeedA + normalizedSpeedB
+  // variables: (normalizedVelocityA, normalizedVelocityB)
+  // maximize: normalizedVelocityA + normalizedVelocityB
 
   // 1) set slack variables
   SetUpStandardMaximizationProblemMatrixSlackVariables(matrix, rows, columns);
@@ -93,37 +146,37 @@ export function FillMovementMaximizationMatrix(
     const distanceB: number = movementB[i];
     const jerkLimit: number = Math.min(jerkLimitsA[i], jerkLimitsB[i]);
 
-    // abs(distanceA * normalizedSpeedA - distanceB * normalizedSpeedB) < jerkLimit
+    // abs(distanceA * normalizedVelocityA - distanceB * normalizedVelocityB) < jerkLimit
     // => MUST be decomposed in two equations because 'abs' is not supported:
 
-    // (+distanceA * normalizedSpeedA - distanceB * normalizedSpeedB) < jerkLimit
+    // (+distanceA * normalizedVelocityA - distanceB * normalizedVelocityB) < jerkLimit
     matrix[row] = distanceA;
     matrix[row + rows] = -distanceB;
     matrix[row + lastColumnIndex] = jerkLimit;
     row++;
 
-    // (-distanceA * normalizedSpeedA + distanceB * normalizedSpeedB) < jerkLimit
+    // (-distanceA * normalizedVelocityA + distanceB * normalizedVelocityB) < jerkLimit
     matrix[row] = -distanceA;
     matrix[row + rows] = distanceB;
     matrix[row + lastColumnIndex] = jerkLimit;
     row++;
   }
 
-  // 2.b) set speed constraints
-  // 1 * normalizedSpeedA + 0 * normalizedSpeedB < normalizedSpeedLimitA
-  // => normalizedSpeedA < normalizedSpeedLimitA
+  // 2.b) set velocity constraints
+  // 1 * normalizedVelocityA + 0 * normalizedVelocityB < normalizedVelocityLimitA
+  // => normalizedVelocityA < normalizedVelocityLimitA
   matrix[row] = 1;
   matrix[row + rows] = 0;
-  matrix[row + lastColumnIndex] = normalizedSpeedLimitA;
+  matrix[row + lastColumnIndex] = normalizedVelocityLimitA;
   row++;
 
-  // => normalizedSpeedB < normalizedSpeedLimitA
+  // => normalizedVelocityB < normalizedVelocityLimitA
   matrix[row] = 0;
   matrix[row + rows] = 1;
-  matrix[row + lastColumnIndex] = normalizedSpeedLimitB;
+  matrix[row + lastColumnIndex] = normalizedVelocityLimitB;
   row++;
 
-  // 3) set maximize => normalizedSpeedA + normalizedSpeedB
+  // 3) set maximize => normalizedVelocityA + normalizedVelocityB
   // note that coefficients are inverted
   matrix[row] = -1;
   matrix[row + rows] = -1;
@@ -133,15 +186,15 @@ export function FillMovementMaximizationMatrix(
 export function DecomposeMovement(
   movementId: number,
   movement: TNumberArray,
-  normalizedStartSpeed: number,
-  normalizedEndSpeed: number,
-  normalizedSpeedLimit: number,
+  normalizedStartVelocity: number,
+  normalizedEndVelocity: number,
+  normalizedVelocityLimit: number,
   normalizedAccelerationLimit: number,
   movementList: OptimizedMovementList,
 ): void {
   const axisCount: number = movement.length;
 
-  // a decomposed movement have the following phases: acceleration, linear (constant speed), deceleration
+  // a decomposed movement have the following phases: acceleration, linear (constant velocity), deceleration
 
   // 1) compute the point were we accelerate as fast as possible and decelerate as fast as possible
 
@@ -150,48 +203,48 @@ export function DecomposeMovement(
 
   const ta: number = (
       Math.sqrt(
-        ((normalizedStartSpeed * normalizedStartSpeed) + (normalizedEndSpeed * normalizedEndSpeed)) / 2
+        ((normalizedStartVelocity * normalizedStartVelocity) + (normalizedEndVelocity * normalizedEndVelocity)) / 2
         + normalizedAccelerationLimit
-      ) - normalizedStartSpeed
+      ) - normalizedStartVelocity
     ) / normalizedAccelerationLimit;
 
-  const tb: number = ta + (normalizedStartSpeed - normalizedEndSpeed) / normalizedAccelerationLimit;
+  const tb: number = ta + (normalizedStartVelocity - normalizedEndVelocity) / normalizedAccelerationLimit;
 
   // 2) compute the 3 decomposed movement's times => t0, t1, t2
 
-  // compute acceleration time having a speed limit
+  // compute acceleration time having a velocity limit
   const t0: number = Math.min(
     ta,
-    (normalizedSpeedLimit - normalizedStartSpeed) / normalizedAccelerationLimit /* time to reach speed limit from normalizedStartSpeed */
+    (normalizedVelocityLimit - normalizedStartVelocity) / normalizedAccelerationLimit /* time to reach velocity limit from normalizedStartVelocity */
   );
 
-  // compute deceleration time having a speed limit
+  // compute deceleration time having a velocity limit
   const t2: number = Math.min(
     tb,
-    (normalizedSpeedLimit - normalizedEndSpeed) / normalizedAccelerationLimit /* time to reach speed limit from normalizedEndSpeed */
+    (normalizedVelocityLimit - normalizedEndVelocity) / normalizedAccelerationLimit /* time to reach velocity limit from normalizedEndVelocity */
   );
 
-  // compute the max achieved speed
-  const normalizedMaxSpeed: number = normalizedAccelerationLimit * t0 + normalizedStartSpeed;
+  // compute the max achieved velocity
+  const normalizedMaxVelocity: number = normalizedAccelerationLimit * t0 + normalizedStartVelocity;
 
   // d0, d1, d2 => distances (normalized) of the 3 decomposed children
-  const d0: number = (0.5 * normalizedAccelerationLimit * t0 * t0) + (normalizedStartSpeed * t0);
-  const d2: number = (0.5 * normalizedAccelerationLimit * t2 * t2) + (normalizedEndSpeed * t2);
+  const d0: number = (0.5 * normalizedAccelerationLimit * t0 * t0) + (normalizedStartVelocity * t0);
+  const d2: number = (0.5 * normalizedAccelerationLimit * t2 * t2) + (normalizedEndVelocity * t2);
   const d1: number = 1 - d0 - d2;
 
   // console.log('d0', d0, 'd1', d1, 'd2', d2);
 
-  const t1: number = d1 / normalizedMaxSpeed;
+  const t1: number = d1 / normalizedMaxVelocity;
 
   // console.log('t0', t0, 't1', t1, 't2', t2);
 
   // acceleration
   if (!FloatIsNull(t0)) {
-    let index: number = movementList.range.start;
+    let index: number = movementList.range.end;
     movementList.range.shiftEnd(movementList.vectorLength);
     movementList.array[index++] = movementId;
     movementList.array[index++] = normalizedAccelerationLimit / d0;
-    movementList.array[index++] = normalizedSpeedLimit / d0;
+    movementList.array[index++] = normalizedVelocityLimit / d0;
     for (let i: number = 0; i < axisCount; i++) {
       movementList.array[index++] = movement[i] * d0;
     }
@@ -203,7 +256,7 @@ export function DecomposeMovement(
     movementList.range.shiftEnd(movementList.vectorLength);
     movementList.array[index++] = movementId;
     movementList.array[index++] = 0;
-    movementList.array[index++] = normalizedMaxSpeed / d1;
+    movementList.array[index++] = normalizedMaxVelocity / d1;
     for (let i: number = 0; i < axisCount; i++) {
       movementList.array[index++] = movement[i] * d1;
     }
@@ -215,7 +268,7 @@ export function DecomposeMovement(
     movementList.range.shiftEnd(movementList.vectorLength);
     movementList.array[index++] = movementId;
     movementList.array[index++] = -normalizedAccelerationLimit / d0;
-    movementList.array[index++] = normalizedMaxSpeed / d2;
+    movementList.array[index++] = normalizedMaxVelocity / d2;
     for (let i: number = 0; i < axisCount; i++) {
       movementList.array[index++] = movement[i] * d2;
     }
@@ -228,7 +281,7 @@ export function DecomposeMovement(
 
 export interface IMovementConstraint {
   accelerationLimit: number;
-  speedLimit: number;
+  velocityLimit: number;
   jerkLimit: number;
 }
 
@@ -236,15 +289,17 @@ export class MovementOptimizer {
   public readonly axisCount: number;
   public readonly constraints: IMovementConstraint[];
 
+  public readonly lastMovementId: number;
+  public readonly movements: MovementList;
   public readonly optimizedMovements: OptimizedMovementList;
 
   // protected distances: number[];
   // protected accelerationLimits: number[];
-  // protected speedLimits: number[];
+  // protected velocityLimits: number[];
   // protected jerkLimits: number[];
 
-  protected normalizedAccelerationLimits: number[];
-  protected normalizedSpeedLimits: number[];
+  // protected normalizedAccelerationLimits: number[];
+  // protected normalizedVelocityLimits: number[];
 
   protected maximizationMatrix: Float64Array;
   protected maximizationMatrixRows: number;
@@ -259,6 +314,9 @@ export class MovementOptimizer {
     //   throw new Error(`constraints' length must be ${ this.axisCount }`)
     // }
     this.constraints = constraints;
+
+    this.lastMovementId = -1;
+    this.movements = new OptimizedMovementList(this.axisCount);
     this.optimizedMovements = new OptimizedMovementList(this.axisCount);
     [
       this.maximizationMatrix,
@@ -266,6 +324,9 @@ export class MovementOptimizer {
       this.maximizationMatrixColumns
     ] = MovementOptimizerCreateMaximizationMatrix<Float64Array>(Float64Array, this.axisCount);
     this.maximizationMatrixSolution = new Float64Array(2);
+    
+    // this.normalizedAccelerationLimits = [];
+    // this.normalizedVelocityLimits = [];
   }
 
   /**
@@ -276,85 +337,117 @@ export class MovementOptimizer {
     movement: TNumberArray,
     constraints: IMovementConstraint[] = this.constraints
   ): void {
-    // 1) compute normalized acceleration and speed limits
+    console.warn('---> add movement');
+    // 1) compute normalized acceleration and velocity limits
     let normalizedAccelerationLimit: number = Number.POSITIVE_INFINITY;
-    let normalizedSpeedLimit: number = Number.POSITIVE_INFINITY;
+    let normalizedVelocityLimit: number = Number.POSITIVE_INFINITY;
 
     for (let i: number = 0; i < this.axisCount; i++) {
-      const constraint: IMovementConstraint = constraints[i];
-      const absoluteDistance: number = Math.abs(movement[i]);
-      normalizedAccelerationLimit = Math.min(normalizedAccelerationLimit, constraint.accelerationLimit / absoluteDistance);
-      normalizedSpeedLimit = Math.min(normalizedSpeedLimit, constraint.speedLimit / absoluteDistance);
+      const distance: number = movement[i];
+      if (distance !== 0) {
+        const constraint: IMovementConstraint = constraints[i];
+        const absoluteDistance: number = Math.abs(distance);
+        normalizedAccelerationLimit = Math.min(normalizedAccelerationLimit, constraint.accelerationLimit / absoluteDistance);
+        normalizedVelocityLimit = Math.min(normalizedVelocityLimit, constraint.velocityLimit / absoluteDistance);
+      }
     }
 
-    console.log(normalizedAccelerationLimit, normalizedSpeedLimit);
-
-    // 1) compute best initial and final speed
-    //  a) compute best initial and final speed from first movement to last one, assuming fastest speed at the end of the movement
-    //  b) compute best initial and final speed from last movement to first one, assuming fastest speed at the beginning of the movement
-
-    const normalizedInitialSpeed: number = 0;
-
-    const normalizedFinalSpeedLimit = Math.min(
-      normalizedSpeedLimit,
-      (normalizedAccelerationLimit === 0)
-        ? normalizedInitialSpeed
-        : Math.sqrt(normalizedInitialSpeed * normalizedInitialSpeed + 2 * normalizedAccelerationLimit)
-    );
-
-
-
-    console.log(normalizedFinalSpeedLimit);
-
-    FillMovementMaximizationMatrix(
-      this.maximizationMatrix,
-      this.maximizationMatrixRows,
-      this.maximizationMatrixColumns,
-      this.axisCount,
-      movement,
-      Array.from(movement, v => -v),
-      constraints.map(_ => _.jerkLimit),
-      constraints.map(_ => _.jerkLimit), /* TODO replace by next movement jerk limits */
-      normalizedFinalSpeedLimit,
-      Math.min(normalizedFinalSpeedLimit, normalizedFinalSpeedLimit /* TODO replace by normalized next movement speed limit */),
-    );
-
-    SolveAndGetSolutionsOfStandardMaximizationProblemMatrix(
-      this.maximizationMatrix,
-      this.maximizationMatrixRows,
-      this.maximizationMatrixColumns,
-      this.maximizationMatrixSolution,
-    );
-
     console.log(
-      MatrixToString(
-        this.maximizationMatrix,
-        this.maximizationMatrixRows,
-        this.maximizationMatrixColumns,
-      )
+      'normalizedAccelerationLimit', normalizedAccelerationLimit,
+      'normalizedVelocityLimit', normalizedVelocityLimit,
     );
 
-    console.log(this.maximizationMatrixSolution);
+    const lastMovementIndex: number =(this.movements.range.startToEnd() === 0)
+      ? -1
+      : this.movements.getRelativeIndex(-1);
 
-    // normalizedMovesSequence._buffers['finalSpeeds'][i] = solutions.values[0];
-    // normalizedMovesSequence._buffers['initialSpeeds'][i + 1] = solutions.values[1];
+    console.log('lastMovementIndex', lastMovementIndex);
+
+    let normalizedStartVelocityAToB: number;
+    let normalizedEndVelocityAToB: number;
+    let normalizedStartVelocityBToA: number;
+    let normalizedEndVelocityBToA: number;
+
+    // A to B
+    normalizedStartVelocityAToB = (lastMovementIndex === -1)
+      ? 0
+      : this.movements.array[lastMovementIndex + MOVEMENT_NORMALIZED_START_VELOCITY_LIMIT_A_TO_B_OFFSET];
+
+    normalizedEndVelocityAToB = Math.min(
+      normalizedVelocityLimit,
+      Math.sqrt(normalizedStartVelocityAToB * normalizedStartVelocityAToB + 2 * normalizedAccelerationLimit)
+    );
+
+    if (lastMovementIndex === -1) {
+      normalizedStartVelocityBToA = 0;
+      normalizedEndVelocityBToA = 0;
+    } else {
+      // normalizedStartVelocityAToB = 0;
+      normalizedStartVelocityBToA = 0;
+      normalizedEndVelocityBToA = 0;
+
+      console.log('normalizedEndVelocityAToB', normalizedEndVelocityAToB);
+
+      //
+      // FillMovementMaximizationMatrix(
+      //   this.maximizationMatrix,
+      //   this.maximizationMatrixRows,
+      //   this.maximizationMatrixColumns,
+      //   this.axisCount,
+      //   movement,
+      //   Array.from(movement, v => -v),
+      //   constraints.map(_ => _.jerkLimit),
+      //   constraints.map(_ => _.jerkLimit), /* TODO replace by next movement jerk limits */
+      //   normalizedEndVelocityLimitAToB,
+      //   Math.min(normalizedEndVelocityLimitAToB, normalizedEndVelocityLimitAToB /* TODO replace by normalized next movement velocity limit */),
+      // );
+      //
+      // SolveAndGetSolutionsOfStandardMaximizationProblemMatrix(
+      //   this.maximizationMatrix,
+      //   this.maximizationMatrixRows,
+      //   this.maximizationMatrixColumns,
+      //   this.maximizationMatrixSolution,
+      // );
+      //
+      // console.log(
+      //   MatrixToString(
+      //     this.maximizationMatrix,
+      //     this.maximizationMatrixRows,
+      //     this.maximizationMatrixColumns,
+      //   )
+      // );
+      //
+      // console.log(this.maximizationMatrixSolution);
+    }
+
+    const index: number = this.movements.range.end;
+    this.movements.range.shiftEnd(this.movements.vectorLength);
+    this.movements.array[index] = ++(this.lastMovementId as number);
+    this.movements.array[index + MOVEMENT_NORMALIZED_START_VELOCITY_LIMIT_A_TO_B_OFFSET] = normalizedStartVelocityAToB;
+    this.movements.array[index + MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_A_TO_B_OFFSET] = normalizedEndVelocityAToB;
+    this.movements.array[index + MOVEMENT_NORMALIZED_START_VELOCITY_LIMIT_B_TO_A_OFFSET] = normalizedStartVelocityBToA;
+    this.movements.array[index + MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_B_TO_A_OFFSET] = normalizedEndVelocityBToA;
+
+
 
     // movement: TNumberArray,
-    //   normalizedStartSpeed: number,
-    //   normalizedEndSpeed: number,
-    //   normalizedSpeedLimit: number,
+    //   normalizedStartVelocity: number,
+    //   normalizedEndVelocity: number,
+    //   normalizedVelocityLimit: number,
     //   normalizedAccelerationLimit: number,
     //   movementList: OptimizedMovementList,
 
-    DecomposeMovement(
-      0,
-      movement,
-      0,
-      0,
-      1,
-      1,
-      this.optimizedMovements,
-    );
+    // DecomposeMovement(
+    //   0,
+    //   movement,
+    //   0,
+    //   0,
+    //   1,
+    //   1,
+    //   this.optimizedMovements,
+    // );
+
+
 
 
   }
@@ -362,7 +455,7 @@ export class MovementOptimizer {
 
 
 
-// private _getMaximizationMatrix(index_0: number, index_1: number, finalSpeedLimit: number, initialSpeedLimit: number): Matrix<Float64Array> {
+// private _getMaximizationMatrix(index_0: number, index_1: number, finalVelocityLimit: number, initialVelocityLimit: number): Matrix<Float64Array> {
 //   // 2 per axes
 //   // + 2 for max values
 //   // + 1 for maximization
@@ -403,12 +496,12 @@ export class MovementOptimizer {
 //
 // matrix.values[row] = 1;
 // // matrix.values[row + col_1] = 0;
-// matrix.values[row + col_last] = finalSpeedLimit;
+// matrix.values[row + col_last] = finalVelocityLimit;
 // row++;
 //
 // // matrix.values[row] = 0;
 // matrix.values[row + col_1] = 1;
-// matrix.values[row + col_last] = initialSpeedLimit;
+// matrix.values[row + col_last] = initialVelocityLimit;
 // row++;
 //
 // matrix.values[row] = -1;
@@ -424,7 +517,7 @@ export class MovementOptimizer {
 export function debugMovementOptimizer() {
   const defaultConstraint: IMovementConstraint = {
     accelerationLimit: 1,
-    speedLimit: 1,
+    velocityLimit: 1,
     jerkLimit: 0.1,
   };
 
@@ -436,6 +529,10 @@ export function debugMovementOptimizer() {
   const optimizer = new MovementOptimizer(constraints);
 
   optimizer.add([1, 2]);
+  optimizer.add([2, -1]);
+
+  // console.log(optimizer.movements.array);
+  console.log(optimizer.movements.toTypedArray());
 }
 
 export function runDebug() {

@@ -1,7 +1,7 @@
-import { TArrayBufferView } from '../../types/array-buffer-view';
-import { CyclicRange, NormalizeCyclicIndex } from './CyclicRange';
+import { TArrayBufferView } from '../../../types/array-buffer-view';
+import { CyclicRange, NormalizeCyclicIndex } from '../CyclicRange';
 
-export class CyclicTypedVectorArray<TArray extends TArrayBufferView> {
+export class CyclicTypedVectorArray2<TArray extends TArrayBufferView> {
   public array: TArray;
   public vectorLength: number;
   public range: CyclicRange;
@@ -20,22 +20,7 @@ export class CyclicTypedVectorArray<TArray extends TArrayBufferView> {
     return this.range.endToStart() / this.vectorLength;
   }
 
-  /**
-   * Pushes 'input' before the first element of the array
-   */
-  unshift(input: TArray): void {
-    if (input.length === this.vectorLength) {
-      this.range.shiftStart(-this.vectorLength);
-      this.array.set(input, this.range.start);
-    } else {
-      throw new Error(`Expected an input with length: ${ this.vectorLength }`);
-    }
-  }
-
-  /**
-   * Removes and returns the first element of the vector array
-   */
-  shift(output?: TArray): TArray {
+  read(output?: TArray): TArray {
     const index: number = this.range.start;
     this.range.shiftStart(this.vectorLength);
     const data: TArray = this.array.subarray(index, index + this.vectorLength) as TArray;
@@ -47,13 +32,12 @@ export class CyclicTypedVectorArray<TArray extends TArrayBufferView> {
     }
   }
 
-
-  /**
-   * Pushes 'input' after the last element of the array
-   */
-  push(input: TArray): void {
+  write(input: TArray): void {
     if (input.length === this.vectorLength) {
       const index: number = this.range.end;
+      // if (this.readable() === 0) {
+      //   this.range.shiftStart(this.vectorLength);
+      // }
       this.range.shiftEnd(this.vectorLength);
       this.array.set(input, index);
     } else {
@@ -61,31 +45,9 @@ export class CyclicTypedVectorArray<TArray extends TArrayBufferView> {
     }
   }
 
-  /**
-   * Removes and returns the last element of the vector array
-   */
-  pop(output?: TArray): TArray {
-    this.range.shiftEnd(-this.vectorLength);
-    const data: TArray = this.array.subarray(this.range.start, this.range.start + this.vectorLength) as TArray;
-    if (output === void 0) {
-      return data;
-    } else {
-      output.set(data);
-      return output;
-    }
-  }
-
-  getRelativeIndex(index: number): number {
-    const readable: number = this.readable();
-    if (readable > 0) {
-      return this.range.start + (NormalizeCyclicIndex(index, readable) * this.vectorLength);
-    } else {
-      throw new Error(`Empty array`);
-    }
-  }
-
   item(index: number): TArray {
-    const _index: number = this.getRelativeIndex(index);
+    index = NormalizeCyclicIndex(index, this.readable());
+    const _index: number = NormalizeCyclicIndex(this.range.start + (index * this.vectorLength), this.range.size);
     return this.array.subarray(_index, _index + this.vectorLength) as TArray;
   }
 
