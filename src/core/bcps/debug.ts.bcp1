@@ -119,9 +119,7 @@ export function MovementOptimizerCreateMaximizationMatrix<TMatrix extends TNumbe
   ];
 }
 
-/**
- * WARN: the movements can't be collinear of the matrix won't solve properly
- */
+
 export function FillMovementMaximizationMatrix(
   matrix: TNumberArray,
   rows: number,
@@ -280,83 +278,6 @@ export function DecomposeMovement(
 }
 
 
-export function testMovementSolution() {
-
-  const axisCount: number = 2;
-
-  const [
-    matrix,
-    rows,
-    columns
-  ] = MovementOptimizerCreateMaximizationMatrix<Float64Array>(Float64Array, axisCount);
-
-  const solution: Float64Array = new Float64Array(2);
-
-  const rand = (a: number, b: number) => {
-    return Math.random() * (b - a) + a;
-  };
-
-  const randValue = () => {
-    return rand(-2, 2);
-  }
-
-  const verifySolution = (
-    axisCount: number,
-    movementA: TNumberArray,
-    movementB: TNumberArray,
-    jerkLimitsA: TNumberArray,
-    jerkLimitsB: TNumberArray,
-    normalizedVelocityLimitA: number,
-    normalizedVelocityLimitB: number,
-  ) => {
-
-  };
-
-  const movementA = [randValue(), randValue()];
-  const movementB = [randValue(), randValue()];
-
-  FillMovementMaximizationMatrix(
-    matrix,
-    rows,
-    columns,
-    axisCount,
-    movementA,
-    movementB,
-    [1, 1],
-    [1, 1],
-    1000,
-    1000,
-  );
-
-  console.log(
-    MatrixToString(
-      matrix,
-      rows,
-      columns,
-    )
-  );
-
-  SolveAndGetSolutionsOfStandardMaximizationProblemMatrix(
-    matrix,
-    rows,
-    columns,
-    solution,
-  );
-
-  console.log(
-    MatrixToString(
-      matrix,
-      rows,
-      columns,
-    )
-  );
-
-
-  console.log(solution);
-
-  console.log();
-}
-
 /*---*/
 
 
@@ -422,6 +343,7 @@ export class MovementOptimizer {
     // 1) compute normalized acceleration and velocity limits
     let normalizedAccelerationLimit: number = Number.POSITIVE_INFINITY;
     let normalizedVelocityLimit: number = Number.POSITIVE_INFINITY;
+    let normalizedJerkLimit: number = Number.POSITIVE_INFINITY;
 
     for (let i: number = 0; i < this.axisCount; i++) {
       const distance: number = movement[i];
@@ -430,12 +352,14 @@ export class MovementOptimizer {
         const absoluteDistance: number = Math.abs(distance);
         normalizedAccelerationLimit = Math.min(normalizedAccelerationLimit, constraint.accelerationLimit / absoluteDistance);
         normalizedVelocityLimit = Math.min(normalizedVelocityLimit, constraint.velocityLimit / absoluteDistance);
+        normalizedJerkLimit = Math.min(normalizedJerkLimit, constraint.jerkLimit / absoluteDistance);
       }
     }
 
     console.log(
       'normalizedAccelerationLimit', normalizedAccelerationLimit,
       'normalizedVelocityLimit', normalizedVelocityLimit,
+      'normalizedJerkLimit', normalizedJerkLimit,
     );
 
     const lastMovementIndex: number = (this.movements.range.startToEnd() === 0)
@@ -651,9 +575,8 @@ export function debugMovementOptimizer() {
 export function runDebug() {
   // debugStandardMaximizationProblem();
   // debugStandardMaximizationProblemSolver();
-  // debugMovementOptimizer();
+  debugMovementOptimizer();
   // debugCyclicIndex();
   // debugCyclicRange();
-  testMovementSolution();
 
 }

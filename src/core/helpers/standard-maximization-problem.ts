@@ -4,6 +4,7 @@ import { MatrixToString } from './math';
 
 // https://college.cengage.com/mathematics/larson/elementary_linear/4e/shared/downloads/c09s3.pdf
 // https://courses.lumenlearning.com/finitemath1/chapter/reading-solving-standard-maximization-problems-using-the-simplex-method/
+// http://www.solving-math-problems.com/simplex-method-solve-standard-maximization-problem.html
 
 export function GetStandardMaximizationProblemMatrixColumnCount(
   variableCount: number,
@@ -275,6 +276,23 @@ export function ApplyGaussianEliminationToStandardMaximizationProblemMatrix(
       }
     }
   }
+  // const pivot: number = matrix[pivotRow + pivotColumn * rows];
+  // const pivotColumnIndex: number = pivotColumn * rows;
+  // for (let row: number = 0; row < rows; row++) {
+  //   if (row !== pivotRow) {
+  //     const value: number = matrix[pivotColumnIndex + row];
+  //     if (value !== 0) {
+  //       const factor: number = pivot / value;
+  //       for (
+  //         let columnIndex: number = 0;
+  //         columnIndex < matrixLength;
+  //         columnIndex += rows
+  //       ) {
+  //         matrix[row + columnIndex] = factor * matrix[row + columnIndex] - matrix[pivotRow + columnIndex];
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 
@@ -296,6 +314,8 @@ export function SolveStandardMaximizationProblemMatrixIteration(
   if (pivotRow === -1) {
     throw new Error(`Problem is not solvable`);
   }
+
+  // console.log('pivotRow', pivotRow, 'pivotColumn', pivotColumn);
 
   // 3) apply gaussian elimination
   ApplyGaussianEliminationToStandardMaximizationProblemMatrix(
@@ -319,6 +339,7 @@ export function SolveStandardMaximizationProblemMatrix(
   let i: number = 0;
   while ((i++ < maxIterations) && !SolveStandardMaximizationProblemMatrixIteration(matrix, rows, columns)) {
     // console.log(MatrixToString(matrix, rows, columns));
+    // debugger;
   }
 
   if (i >= maxIterations) {
@@ -351,6 +372,32 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutionRow(
   return rowIndex;
 }
 
+// export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput extends TNumberArray>(
+//   matrix: TNumberArray,
+//   rows: number,
+//   columns: number,
+//   output: TOutput,
+// ): TOutput {
+//   const variableCount: number = GetStandardMaximizationProblemMatrixVariableCount(rows, columns);
+//   const lastColumnIndex: number = (columns - 1) * rows;
+//   for (let column: number = 0; column < variableCount; column++) {
+//     const rowIndex: number = GetResolvedStandardMaximizationProblemMatrixSolutionRow(matrix, rows, column);
+//     if (rowIndex === -1) {
+//       console.log(
+//         MatrixToString(
+//           matrix,
+//           rows,
+//           columns,
+//         )
+//       );
+//       throw new Error(`Matrix is not resolved`);
+//     } else {
+//       output[column] = matrix[lastColumnIndex + rowIndex];
+//     }
+//   }
+//   return output;
+// }
+
 export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput extends TNumberArray>(
   matrix: TNumberArray,
   rows: number,
@@ -358,16 +405,27 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput ex
   output: TOutput,
 ): TOutput {
   const variableCount: number = GetStandardMaximizationProblemMatrixVariableCount(rows, columns);
-  const lastColumnIndex: number = (columns - 1) * rows;
-  for (let column: number = 0; column < variableCount; column++) {
+  const lastColumnNumber: number = (columns - 1);
+  const lastColumnIndex: number = lastColumnNumber * rows;
+  let i: number = 0;
+  for (let column: number = 0; column < lastColumnNumber; column++) {
     const rowIndex: number = GetResolvedStandardMaximizationProblemMatrixSolutionRow(matrix, rows, column);
-    if (rowIndex === -1) {
-      throw new Error(`Matrix is not resolved`);
-    } else {
-      output[column] = matrix[lastColumnIndex + rowIndex];
+    if (rowIndex !== -1) {
+      output[i++] = matrix[lastColumnIndex + rowIndex];
     }
   }
-  return output;
+  if (i < variableCount) {
+    console.log(
+      MatrixToString(
+        matrix,
+        rows,
+        columns,
+      )
+    );
+    throw new Error(`Matrix is not resolved`);
+  } else {
+    return output;
+  }
 }
 
 export function VerifyResolvedStandardMaximizationProblemMatrixOutputArgument(

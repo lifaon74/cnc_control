@@ -1,5 +1,5 @@
-import { TArrayBufferView } from '../../../types/array-buffer-view';
-import { CyclicRange, NormalizeCyclicIndex } from '../CyclicRange';
+import { TArrayBufferView } from '../types/array-buffer-view';
+import { CyclicRange, NormalizeCyclicIndex } from '../classes/cyclic/CyclicRange';
 
 export class CyclicTypedVectorArray2<TArray extends TArrayBufferView> {
   public array: TArray;
