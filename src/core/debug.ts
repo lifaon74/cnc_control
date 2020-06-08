@@ -1,6 +1,6 @@
 import {
   GetStandardMaximizationProblemMatrixColumnCount, GetStandardMaximizationProblemMatrixRowCount,
-  SetUpStandardMaximizationProblemMatrixSlackVariables, SolveAndGetSolutionsOfStandardMaximizationProblemMatrix
+  SetUpStandardMaximizationProblemMatrixSlackVariables, SolveAndGetSolutionsOfStandardMaximizationProblemMatrix, VerifyMaximizationProblemMatrixSolutions
 } from './helpers/standard-maximization-problem';
 import { TArrayLikeTypedConstructor, TNumberArray } from './helpers/types';
 import { FloatIsNull, MatrixToString } from './helpers/math';
@@ -300,18 +300,6 @@ export function testMovementSolution() {
     return rand(-2, 2);
   }
 
-  const verifySolution = (
-    axisCount: number,
-    movementA: TNumberArray,
-    movementB: TNumberArray,
-    jerkLimitsA: TNumberArray,
-    jerkLimitsB: TNumberArray,
-    normalizedVelocityLimitA: number,
-    normalizedVelocityLimitB: number,
-  ) => {
-
-  };
-
   const movementA = [randValue(), randValue()];
   const movementB = [randValue(), randValue()];
 
@@ -351,10 +339,14 @@ export function testMovementSolution() {
     )
   );
 
+  VerifyMaximizationProblemMatrixSolutions(
+    matrix,
+    rows,
+    columns,
+    solution,
+  );
 
   console.log(solution);
-
-  console.log();
 }
 
 /*---*/
@@ -458,33 +450,6 @@ export class MovementOptimizer {
       normalizedEndVelocityBToA = 0;
     } else {
       // A to B
-      // normalizedStartVelocityAToB = (lastMovementIndex === -1)
-      //   ? 0
-      //   : Math.min(
-      //     normalizedVelocityLimit,
-      //     this.movements.array[lastMovementIndex + MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_A_TO_B_OFFSET]
-      //   );
-      //
-      // normalizedEndVelocityAToB = Math.min(
-      //   normalizedVelocityLimit,
-      //   Math.sqrt(normalizedStartVelocityAToB * normalizedStartVelocityAToB + 2 * normalizedAccelerationLimit) // max reachable end velocity with max acceleration
-      // );
-      //
-
-      // console.log('normalizedEndVelocityAToB', normalizedEndVelocityAToB);
-
-
-
-      // matrix: TNumberArray,
-      //   rows: number,
-      //   columns: number,
-      //   axisCount: number,
-      //   movementA: TNumberArray,
-      //   movementB: TNumberArray,
-      //   jerkLimitsA: TNumberArray,
-      //   jerkLimitsB: TNumberArray,
-      //   normalizedVelocityLimitA: number,
-      //   normalizedVelocityLimitB: number,
 
       const lastMovement: Float64Array = this.movements.array.subarray(lastMovementIndex + this.movements.DISTANCE_OFFSET, lastMovementIndex + this.movements.DISTANCE_OFFSET + this.movements.axisCount);
       const lastMovementJerkLimits: Float64Array = this.movements.array.subarray(lastMovementIndex + MOVEMENT_JERK_LIMIT_OFFSET, lastMovementIndex + MOVEMENT_JERK_LIMIT_OFFSET + this.movements.axisCount);
@@ -512,19 +477,24 @@ export class MovementOptimizer {
         this.maximizationMatrixSolution,
       );
 
-      console.log(
-        MatrixToString(
-          this.maximizationMatrix,
-          this.maximizationMatrixRows,
-          this.maximizationMatrixColumns,
-        )
+      // console.log(
+      //   MatrixToString(
+      //     this.maximizationMatrix,
+      //     this.maximizationMatrixRows,
+      //     this.maximizationMatrixColumns,
+      //   )
+      // );
+      //
+      // console.log(this.maximizationMatrixSolution);
+      this.movements.array[lastMovementIndex + MOVEMENT_NORMALIZED_END_VELOCITY_LIMIT_A_TO_B_OFFSET] = this.maximizationMatrixSolution[0];
+      normalizedStartVelocityAToB = this.maximizationMatrixSolution[1];
+      normalizedEndVelocityAToB = Math.min(
+        normalizedVelocityLimit,
+        Math.sqrt(normalizedStartVelocityAToB * normalizedStartVelocityAToB + 2 * normalizedAccelerationLimit) // max reachable end velocity with max acceleration
       );
 
-      console.log(this.maximizationMatrixSolution);
-
-
-      normalizedStartVelocityAToB = 0;
-      normalizedEndVelocityAToB = 0;
+      // normalizedStartVelocityAToB = 0;
+      // normalizedEndVelocityAToB = 0;
       normalizedStartVelocityBToA = 0;
       normalizedEndVelocityBToA = 0;
     }
@@ -651,9 +621,9 @@ export function debugMovementOptimizer() {
 export function runDebug() {
   // debugStandardMaximizationProblem();
   // debugStandardMaximizationProblemSolver();
-  // debugMovementOptimizer();
+  debugMovementOptimizer();
   // debugCyclicIndex();
   // debugCyclicRange();
-  testMovementSolution();
+  // testMovementSolution();
 
 }

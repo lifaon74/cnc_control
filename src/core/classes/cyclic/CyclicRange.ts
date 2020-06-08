@@ -3,7 +3,10 @@ export function NormalizeCyclicIndex(
   index: number,
   limit: number,
 ): number {
-  return (index % limit) + ((index < 0) ? limit : 0);
+  index = index % limit;
+  return (index < 0)
+    ? (index + limit)
+    : index;
 }
 
 
