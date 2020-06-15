@@ -17,16 +17,16 @@ export function FloatIsNull(
 
 export function FloatToString(
   a: number,
-  precision: number
+  precision: number = 0
 ): string {
-  return a.toPrecision(precision).replace(/\.?0+$/g, '');
+  return (precision <= 0)
+    ? a.toString(10)
+    : a.toPrecision(precision).replace(/\.?0+$/g, '');
 }
 
 export function MatrixToString(matrix: TNumberArray, rowCount: number, columnCount: number, precision: number = 5): string {
   const _matrix: string[] = Array.from(matrix, (value: number) => {
-    return (precision <= 0)
-      ? value.toString(10)
-      : FloatToString(value, precision);
+    return FloatToString(value, precision);
   });
   // const maxLength: number = _matrix.reduce((maxLength: number, value: string) => Math.max(maxLength, value.length), 0);
   const maxLengths: number[] = Array.from({ length: columnCount }, (v: any, column: number) => {

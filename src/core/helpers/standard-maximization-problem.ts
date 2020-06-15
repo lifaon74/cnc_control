@@ -405,27 +405,14 @@ export function GetResolvedStandardMaximizationProblemMatrixSolutions<TOutput ex
   output: TOutput,
 ): TOutput {
   const variableCount: number = GetStandardMaximizationProblemMatrixVariableCount(rows, columns);
-  const lastColumnNumber: number = (columns - 1);
-  const lastColumnIndex: number = lastColumnNumber * rows;
-  let i: number = 0;
-  for (let column: number = 0; column < lastColumnNumber; column++) {
+  const lastColumnIndex: number = (columns - 1) * rows;
+  for (let column: number = 0; column < variableCount; column++) {
     const rowIndex: number = GetResolvedStandardMaximizationProblemMatrixSolutionRow(matrix, rows, column);
-    if (rowIndex !== -1) {
-      output[i++] = matrix[lastColumnIndex + rowIndex];
-    }
+    output[column] = (rowIndex === -1)
+      ? 0
+      : matrix[lastColumnIndex + rowIndex];
   }
-  if (i < variableCount) {
-    console.log(
-      MatrixToString(
-        matrix,
-        rows,
-        columns,
-      )
-    );
-    throw new Error(`Matrix is not resolved`);
-  } else {
-    return output;
-  }
+  return output;
 }
 
 export function VerifyResolvedStandardMaximizationProblemMatrixOutputArgument(
@@ -453,21 +440,23 @@ export function VerifyMaximizationProblemMatrixSolutions(
   rows: number,
   columns: number,
   solution: TNumberArray,
-  precision: number = 1e-6
 ): void {
-  const lastColumnNumber: number = columns - 1;
-  const lastColumnIndex: number = lastColumnNumber * rows;
+  const variableCount: number = GetStandardMaximizationProblemMatrixVariableCount(rows, columns);
+  const lastColumnIndex: number = (columns - 1) * rows;
 
   for (let row: number = 0; row < rows; row++) {
     let sum: number = 0;
-    for (let column: number = 0; column < lastColumnIndex; column++) {
+    for (let column: number = 0; column < variableCount; column++) {
       sum += matrix[row + column * rows] * solution[column];
     }
-    if (Math.abs(sum - matrix[row + lastColumnNumber]) > precision) {
+    if (sum > matrix[row + lastColumnIndex]) {
       throw new Error(`Matrix not properly resolved`);
     }
   }
 }
+
+
+
 
 
 /*-------------------------*/
