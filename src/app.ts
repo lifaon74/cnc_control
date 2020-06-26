@@ -1,4 +1,7 @@
 import { runDebug } from './core/debug';
+import { Log } from './core/helpers/log';
+
+Log('app start', 'orange');
 
 export function start(mainCallBack: () => (Promise<any> | any)) {
   const ENVIRONMENT: 'browser' | 'nodejs' = ('window' in globalThis) ? 'browser' : 'nodejs';
